@@ -1,1 +1,101 @@
-Hello World
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Leadership Retreat 2024 Check-In</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    /* Same loader and styles as before */
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="mt-4">Leadership Retreat 2024 Check-In</h1>
+    <div class="form-group">
+      <input type="text" id="searchInput" class="form-control" placeholder="Enter (Leader) ID or Phone Number">
+    </div>
+    <button class="btn btn-primary btn-block" onclick="getTeacherDetails()">Submit</button>
+    <div id="details"></div>
+  </div>
+  <div id="backdrop" class="backdrop">
+    <div class="loader"></div>
+  </div>
+
+  <script>
+    const API_URL = "https://script.google.com/.../exec";  // Replace with your actual Google Script URL
+
+    function getTeacherDetails() {
+      const input = document.getElementById('searchInput').value;
+      document.getElementById('backdrop').style.display = 'flex';
+
+      fetch(`${API_URL}?action=getTeacherDetails&input=${encodeURIComponent(input)}`)
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('backdrop').style.display = 'none';
+          if (data.status === 'Success') {
+            displayStudentDetails(data.data);
+          } else {
+            document.getElementById('details').innerHTML = '<div class="alert alert-danger mt-3">Student not found</div>';
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          document.getElementById('backdrop').style.display = 'none';
+        });
+    }
+
+    function displayStudentDetails(detailsList) {
+      let detailsTables = '';
+      detailsList.forEach(details => {
+        const kidsDetails = [
+          details.kidsBelow5Years ? `0-4 years: ${details.kidsBelow5Years}` : '',
+          details.kidsBelow9Years ? `5-9 years: ${details.kidsBelow9Years}` : '',
+          details.kidsBelow11Years ? `Above 11 years: ${details.kidsBelow11Years}` : ''
+        ].filter(Boolean).join(' | ');
+
+        detailsTables += `
+          <div class="table-responsive">
+            <table class="table table-bordered mt-3">
+              <tr><th>ID</th><td>${details.id}</td></tr>
+              <tr><th>Name</th><td>${details.name}</td></tr>
+              <tr><th>Gender</th><td>${details.gender}</td></tr>
+              <tr><th>Phone</th><td>${details.phone}</td></tr>
+              <tr><th>Center</th><td>${details.center}</td></tr>
+              <tr><th>Service</th><td>${details.service}</td></tr>
+              <tr><th>Department</th><td>${details.department}</td></tr>
+              <tr><th>Coming By Bus</th><td>${details.busRequired}</td></tr>
+              <tr><th>Kids Details</th><td>${kidsDetails || 'N/A'}</td></tr>
+              <tr><th>Checked In</th><td id="checkedIn${details.id}">${details.checkedIn}</td></tr>
+              <tr><td colspan="2">
+                <button class="btn btn-primary btn-block" onclick="checkIn('${details.id}')">Check In</button>
+              </td></tr>
+            </table>
+          </div>`;
+      });
+
+      document.getElementById('details').innerHTML = detailsTables;
+    }
+
+    function checkIn(id) {
+      const token = 'YOUR_TOKEN_HERE';  // Replace with actual token or fetch dynamically
+      document.getElementById('backdrop').style.display = 'flex';
+
+      fetch(`${API_URL}?action=checkInStudent&input=${encodeURIComponent(id)}&token=${encodeURIComponent(token)}`)
+        .then(response => response.json())
+        .then(result => {
+          document.getElementById('backdrop').style.display = 'none';
+          if (result.status === 'Success') {
+            document.getElementById(`checkedIn${result.id}`).innerText = 'YES';
+            document.getElementById('details').innerHTML += '<div class="alert alert-success mt-3">Checked In successfully!</div>';
+          } else {
+            document.getElementById('details').innerHTML += '<div class="alert alert-danger mt-3">Failed to Check In</div>';
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          document.getElementById('backdrop').style.display = 'none';
+        });
+    }
+  </script>
+</body>
+</html>
