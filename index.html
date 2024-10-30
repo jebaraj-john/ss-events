@@ -3,8 +3,11 @@
   <head>
     <title>Talent Competition Check-In</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <style>
+      #checkInModalMessage {
+        text-align: center
+      }
       .loader {
         border: 16px solid #f3f3f3;
         border-radius: 50%;
@@ -13,74 +16,48 @@
         height: 60px;
         animation: spin 2s linear infinite;
       }
-      .backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; align-items: center; justify-content: center; }
+      .backdrop {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none;
+        align-items: center; justify-content: center; background: rgba(0,0,0,0.5);
+      }
       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
-    <script>
-      const API_URL = 'https://script.google.com/macros/s/AKfycbygLkC7s4OIDYWxK6NbmSHzrV50LtxGSnYrlOZ8hPiyhGVkP0-1kECQ8zOjFJm89P-BFQ/exec';
-      
-      function fetchStudentDetails() {
-        const input = document.getElementById('searchInput').value;
-        document.getElementById('backdrop').style.display = 'flex';
-        
-        fetch(`${API_URL}?action=getStudentDetails&input=${input}`)
-          .then(response => response.json())
-          .then(data => {
-            document.getElementById('backdrop').style.display = 'none';
-            displayStudentDetails(data.data);
-          })
-          .catch(() => alert('Error retrieving data'));
-      }
+    <script src="./main.js">
 
-      function displayStudentDetails(details) {
-        let content = '';
-        if (details.length > 0) {
-          details.forEach(detail => {
-            content += `<div class="card mt-3">
-              <div class="card-body">
-                <h5>Student Name: ${detail.studentName}</h5>
-                <p>Teacher: ${detail.teacherName}</p>
-                <p>Department: ${detail.department}</p>
-                <p>Service: ${detail.service}</p>
-                <p>Event: ${detail.eventParticipating}</p>
-                <p>Checked In: <span id="checkedIn${detail.regRefNo}">${detail.checkedIn}</span></p>
-                <button class="btn btn-primary" onclick="checkIn('${detail.regRefNo}')">Check In</button>
-              </div>
-            </div>`;
-          });
-        } else {
-          content = '<p class="text-danger mt-3">Student not found</p>';
-        }
-        document.getElementById('details').innerHTML = content;
-      }
-
-      function checkIn(regRefNo) {
-        document.getElementById('backdrop').style.display = 'flex';
-        
-        fetch(`${API_URL}?action=checkInStudent&regRefNo=${regRefNo}`)
-          .then(response => response.json())
-          .then(result => {
-            document.getElementById('backdrop').style.display = 'none';
-            if (result.status === 'Success') {
-              document.getElementById(`checkedIn${regRefNo}`).innerText = 'YES';
-            } else {
-              alert('Check-in failed');
-            }
-          })
-          .catch(() => alert('Error during check-in'));
-      }
     </script>
   </head>
   <body>
     <div class="container">
+      <!-- Backdrop -->
+
+
+      <!-- Bootstrap Modal -->
+      <div class="modal fade" id="checkInModal" tabindex="-1" aria-labelledby="checkInModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="checkInModalLabel">Check-In Status</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="checkInModalMessage">
+              <!-- Success or failure message will appear here -->
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <h1>Talent Competition Check-In</h1>
-      <input type="text" id="searchInput" class="form-control" placeholder="Enter Parent Mobile No or Reg Ref No">
+      <input type="number" id="searchInput" class="form-control" placeholder="Enter Parent Mobile No or Reg Ref No">
       <button class="btn btn-primary mt-2" onclick="fetchStudentDetails()">Search</button>
       <div id="details"></div>
     </div>
     <div id="backdrop" class="backdrop">
+
       <div class="loader"></div>
     </div>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
   </body>
 </html>
