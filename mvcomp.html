@@ -35,7 +35,7 @@
 
   <script>
     async function getStudentDetails() {
-      const input = document.getElementById('searchInput').value
+      let input = document.getElementById('searchInput').value
       if (input.length < 5 && !input.startsWith("TC")) {
         input = "TC" + input
        }
