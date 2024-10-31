@@ -31,6 +31,7 @@ function displayStudentDetails(details) {
             content += `<div class="card mt-3">
               <div class="card-body">
                 <h5>Student Name: ${detail.studentName}</h5>
+                <p><strong>Reg No:</strong> ${detail.regRefNo}</p>
                 <p>Teacher: ${detail.teacherName}</p>
                 <p>Department: ${detail.department}</p>
                 <p>Service: ${detail.service}</p>
