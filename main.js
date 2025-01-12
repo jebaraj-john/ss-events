@@ -3,13 +3,18 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwUMhXBImWs4m9tgn4WR_ma
 function toggleKeyboardType() {
     const input = document.getElementById('searchInput');
     input.type = input.type === 'tel' ? 'text' : 'tel';
-    document.getElementById("searchInput").focus()
+    input.focus()
 }
 
 function setInputType(type) {
     const input = document.getElementById("searchInput");
     input.type = type; // Change input type
-
+    if (type == "tel") {
+        input.placeholder = "Enter Leader/Parent Mobile No or Reg Ref No"
+    }
+    else {
+        input.placeholder = "Enter Student/Leader Name"
+    }
   }
 
 function fetchStudentDetails() {
