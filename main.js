@@ -6,11 +6,19 @@ function toggleKeyboardType() {
     document.getElementById("searchInput").focus()
 }
 
+function setInputType(type) {
+    const input = document.getElementById("searchInput");
+    input.type = type; // Change input type
+
+  }
+
 function fetchStudentDetails() {
     let input = document.getElementById('searchInput').value;
     if (input.length < 5 && !input.startsWith("KC")) {
         input = "KC" + input;
     }
+
+
 
     document.getElementById('backdrop').style.display = 'flex';
     const accessTokenField = document.querySelector("#accessToken");
