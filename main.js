@@ -1,5 +1,10 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbwUMhXBImWs4m9tgn4WR_maBTgYxrbJMZspvrtGITaRLurtJcAV2LSMoFJNlK-hjJQBWg/exec';
 
+function toggleKeyboardType() {
+    const input = document.getElementById('searchInput');
+    input.type = input.type === 'tel' ? 'text' : 'tel';
+}
+
 function fetchStudentDetails() {
     let input = document.getElementById('searchInput').value;
     if (input.length < 5 && !input.startsWith("KC")) {
