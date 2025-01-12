@@ -158,4 +158,7 @@ const accessToken = await auth0Client.getTokenSilently();
 accessTokenField.value = accessToken;
 
 console.log(accessToken)
+})
+.catch((error) => {
+    console.log(error)
 });
