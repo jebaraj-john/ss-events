@@ -3,6 +3,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwUMhXBImWs4m9tgn4WR_ma
 function toggleKeyboardType() {
     const input = document.getElementById('searchInput');
     input.type = input.type === 'tel' ? 'text' : 'tel';
+    document.getElementById("searchInput").focus()
 }
 
 function fetchStudentDetails() {
