@@ -27,10 +27,7 @@ function fetchStudentDetails() {
 
     document.getElementById('backdrop').style.display = 'flex';
     const accessTokenField = document.querySelector("#accessToken");
-    if (!accessTokenField.value) {
-        login()
-    }
-    else {
+
     fetch(`${API_URL}?action=getStudentDetails&input=${input}&authToken=${accessTokenField.value}`)
         .then(response => response.json())
         .then(result => {
@@ -55,7 +52,7 @@ function fetchStudentDetails() {
             const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
             modal.show();
         });
-    }
+
 }
 
 function displayStudentDetails(details) {
