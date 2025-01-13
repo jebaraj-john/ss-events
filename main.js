@@ -118,6 +118,7 @@ auth0.createAuth0Client({
         redirect_uri: window.location.origin + "/ss-events/index.html"
     }
 }).then(async (auth0Client) => {
+    console.log(auth0Client)
 
 // Assumes a button with id "login" in the DOM
 // const loginButton = document.querySelector("#loginBtn");
