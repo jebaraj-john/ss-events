@@ -158,12 +158,13 @@ function login() {
         });
 
         const isAuthenticated = await auth0Client.isAuthenticated();
-        const userProfile = await auth0Client.getUser();
+
 
         // Assumes an element with id "profile" in the DOM
         const profileElement = document.getElementById("profile");
 
         if (isAuthenticated) {
+            const userProfile = await auth0Client.getUser();
             logoutButton.style.display = "block";
             profileElement.style.display = "block";
             profileElement.innerHTML = `
