@@ -173,6 +173,7 @@ function login() {
             style="width: 40px; height: 40px;" src="${userProfile.picture}" />
         `;
         } else {
+            auth0Client.logout();
             profileElement.style.display = "none";
             logoutButton.style.display = "none";
             auth0Client.loginWithRedirect();
