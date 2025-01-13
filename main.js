@@ -111,6 +111,7 @@ function checkIn(regRefNo) {
 }
 
 
+console.log(auth0)
 auth0.createAuth0Client({
     domain: "dev-sazlz3uf0genwd7a.us.auth0.com",
     clientId: "APU6p14IiXfP3Q83B1c8VvPy4cZ2YAH9",
