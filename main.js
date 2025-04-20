@@ -1,4 +1,4 @@
-const API_URL = 'https://script.google.com/macros/s/AKfycbwUMhXBImWs4m9tgn4WR_maBTgYxrbJMZspvrtGITaRLurtJcAV2LSMoFJNlK-hjJQBWg/exec';
+const API_URL = "https://script.google.com/macros/s/AKfycbxmH-igJu1GWaT_y0SdimTKypuZtyQTHJ9f7aoYnqnM3wRreyUAzU4yS8Rg-3FV6sZ8/exec";
 
 function toggleKeyboardType() {
     const input = document.getElementById('searchInput');
@@ -20,6 +20,14 @@ function setInputType(type) {
 function fetchStudentDetails() {
     let input = document.getElementById('searchInput').value;
     if (input.length < 5 && !input.startsWith("KC")) {
+        
+    // if( sheet_name=="NLAG"){
+    //   input = "VBSNL"+ input
+
+    // }
+    // else if(sheet_name=="NLCC"){
+    //   input = "VBSNC"+input
+    // }
         input = "KC" + input;
     }
 
@@ -27,7 +35,13 @@ function fetchStudentDetails() {
 
     document.getElementById('backdrop').style.display = 'flex';
     const accessTokenField = document.querySelector("#accessToken");
-
+    // displayStudentDetails([ { name: 'Ashnika Angel K',
+    //     regRefNo: 'VBSNC0005',
+    //     gender: 'Female',
+    //     paymentMode: 'Cash (Kindly make the Registration Fee Rs 50 at the Sunday School Registration Counter at the respective Centers)',
+    //     department: 'Inter (VIII & IX)',
+    //     mobileNumber: 7200007648,
+    //     bookRequired: 'English' } ]);
     fetch(`${API_URL}?action=getStudentDetails&input=${input}&authToken=${accessTokenField.value}`)
         .then(response => response.json())
         .then(result => {
@@ -63,12 +77,15 @@ function displayStudentDetails(details) {
               <div class="card-body">
                 <h5>Name: ${detail.name}</h5>
                 <p><strong>Reg No:</strong> ${detail.regRefNo}</p>
-                <p><strong>Role:</strong> ${detail.role}</p>
+                <p><strong>Gender:</strong> ${detail.gender}</p>
                 <p><strong>Payment Mode:</strong> ${detail.paymentMode}</p>
-                <p><strong>Center:</strong> ${detail.center}</p>
-                <p><strong>Service:</strong> ${detail.service}</p>
                 <p><strong>Department:</strong> ${detail.department}</p>
-                <p>Checked In: <span id="checkedIn${detail.regRefNo}">${detail.checkedIn}</span></p>
+                <p><strong>MobileNumber:</strong> ${detail.mobileNumber}</p>
+                <p><strong>BookRequired:</strong> ${detail.bookRequired}</p>
+                <div class="form-group">
+                    <label for="payment">Enter the Amount for payment</label>
+                    <input type="number" class="form-control" id="payment" aria-describedby="payment" placeholder="Enter Amount" style= "margin: 10px 0px 10px 0px;">
+                </div>
                 <button class="btn btn-primary" onclick="checkIn('${detail.regRefNo}')">Check In</button>
               </div>
             </div>`;
@@ -81,9 +98,9 @@ function displayStudentDetails(details) {
 
 function checkIn(regRefNo) {
     document.getElementById('backdrop').style.display = 'flex';
-
+    const amount = document.querySelector("#payment");
     const accessTokenField = document.querySelector("#accessToken");
-    fetch(`${API_URL}?action=checkInStudent&regRefNo=${regRefNo}&authToken=${accessTokenField.value}`)
+    fetch(`${API_URL}?action=checkInStudent&regRefNo=${regRefNo}&amount=${amount}&authToken=${accessTokenField.value}`)
         .then(response => response.json())
         .then(result => {
             document.getElementById('backdrop').style.display = 'none';
