@@ -19,17 +19,7 @@ function setInputType(type) {
 
 function fetchStudentDetails() {
     let input = document.getElementById('searchInput').value;
-    if (input.length < 5 && !input.startsWith("KC")) {
-        
-    // if( sheet_name=="NLAG"){
-    //   input = "VBSNL"+ input
 
-    // }
-    // else if(sheet_name=="NLCC"){
-    //   input = "VBSNC"+input
-    // }
-        input = "KC" + input;
-    }
 
 
 
