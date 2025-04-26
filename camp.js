@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbxmH-igJu1GWaT_y0SdimTKypuZtyQTHJ9f7aoYnqnM3wRreyUAzU4yS8Rg-3FV6sZ8/exec";
+const API_URL = 'https://script.google.com/macros/s/AKfycbwUMhXBImWs4m9tgn4WR_maBTgYxrbJMZspvrtGITaRLurtJcAV2LSMoFJNlK-hjJQBWg/exec';
 
 function toggleKeyboardType() {
     const input = document.getElementById('searchInput');
@@ -19,19 +19,15 @@ function setInputType(type) {
 
 function fetchStudentDetails() {
     let input = document.getElementById('searchInput').value;
-
+    if (input.length < 5 && !input.startsWith("KC")) {
+        input = "KC" + input;
+    }
 
 
 
     document.getElementById('backdrop').style.display = 'flex';
     const accessTokenField = document.querySelector("#accessToken");
-    // displayStudentDetails([ { name: 'Ashnika Angel K',
-    //     regRefNo: 'VBSNC0005',
-    //     gender: 'Female',
-    //     paymentMode: 'Cash (Kindly make the Registration Fee Rs 50 at the Sunday School Registration Counter at the respective Centers)',
-    //     department: 'Inter (VIII & IX)',
-    //     mobileNumber: 7200007648,
-    //     bookRequired: 'English' } ]);
+
     fetch(`${API_URL}?action=getStudentDetails&input=${input}&authToken=${accessTokenField.value}`)
         .then(response => response.json())
         .then(result => {
@@ -63,25 +59,17 @@ function displayStudentDetails(details) {
     let content = '';
     if (details.length > 0) {
         details.forEach(detail => {
-            paymentStatus = detail.paymentStatus == "PAID" ? "PAID" : "NOT PAID";
             content += `<div class="card mt-3">
               <div class="card-body">
                 <h5>Name: ${detail.name}</h5>
                 <p><strong>Reg No:</strong> ${detail.regRefNo}</p>
-                <p><strong>Gender:</strong> ${detail.gender}</p>
+                <p><strong>Role:</strong> ${detail.role}</p>
                 <p><strong>Payment Mode:</strong> ${detail.paymentMode}</p>
+                <p><strong>Center:</strong> ${detail.center}</p>
+                <p><strong>Service:</strong> ${detail.service}</p>
                 <p><strong>Department:</strong> ${detail.department}</p>
-                <p><strong>MobileNumber:</strong> ${detail.mobileNumber}</p>
-                <p><strong>BookRequired:</strong> ${detail.bookRequired}</p>
-                <p>
-                    Payment Received:
-                    <span class="${paymentStatus.toLowerCase().replace(" ", "-")}" id="paid${detail.regRefNo}">
-                        ${paymentStatus}
-                    </span>
-                </p>
-                <p>Token Issued: <span id="token_issued${detail.regRefNo}">${detail.tokenStatus}</span></p>
-                <button class="btn btn-primary" onclick="checkIn('${detail.regRefNo}', 'paid')">Payment Received</button>
-                <button class="btn btn-primary" onclick="checkIn('${detail.regRefNo}', 'token_issued')">Issue Token</button>
+                <p>Checked In: <span id="checkedIn${detail.regRefNo}">${detail.checkedIn}</span></p>
+                <button class="btn btn-primary" onclick="checkIn('${detail.regRefNo}')">Check In</button>
               </div>
             </div>`;
         });
@@ -91,15 +79,11 @@ function displayStudentDetails(details) {
     document.getElementById('details').innerHTML = content;
 }
 
-function checkIn(regRefNo, status) {
+function checkIn(regRefNo) {
     document.getElementById('backdrop').style.display = 'flex';
-    let statusTextMap = {
-        'paid': 'Payment Received',
-        'token_issued': 'Token Issued',
-    }
-    const amount = document.querySelector("#payment");
+
     const accessTokenField = document.querySelector("#accessToken");
-    fetch(`${API_URL}?action=checkInStudent&regRefNo=${regRefNo}&status=${status}&authToken=${accessTokenField.value}`)
+    fetch(`${API_URL}?action=checkInStudent&regRefNo=${regRefNo}&authToken=${accessTokenField.value}`)
         .then(response => response.json())
         .then(result => {
             document.getElementById('backdrop').style.display = 'none';
@@ -108,11 +92,11 @@ function checkIn(regRefNo, status) {
             const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
 
             if (result.status.toLowerCase() === 'success') {
-                document.getElementById(`${status}${regRefNo}`).innerText = 'YES';
-                messageElement.innerText = `${statusTextMap[status]} successful!`;
+                document.getElementById(`checkedIn${regRefNo}`).innerText = 'YES';
+                messageElement.innerText = 'Check-in successful!';
                 messageElement.className = 'text-success';
             } else {
-                messageElement.innerText = `${statusTextMap[status]} failed. Please try again.`;
+                messageElement.innerText = 'Check-in failed. Please try again.';
                 messageElement.className = 'text-danger';
             }
 
@@ -121,13 +105,12 @@ function checkIn(regRefNo, status) {
         .catch(() => {
             document.getElementById('backdrop').style.display = 'none';
             const messageElement = document.getElementById('checkInModalMessage');
-            messageElement.innerText = `Error during ${statusTextMap[status]}. Please try again.`;
+            messageElement.innerText = 'Error during check-in. Please try again.';
             messageElement.className = 'text-danger';
             const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
             modal.show();
         });
 }
-
 
 function login() {
     console.log(auth0)
