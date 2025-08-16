@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbzXCQcCXIxhDG3vOhAiUGC-ltfJ8sfwo-_QSXuLuA9yQkp6H3JA1Kc4aL1sTPlE_wEk4A/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxmH-igJu1GWaT_y0SdimTKypuZtyQTHJ9f7aoYnqnM3wRreyUAzU4yS8Rg-3FV6sZ8/exec";
 
 function toggleKeyboardType() {
     const input = document.getElementById('searchInput');
@@ -59,63 +59,29 @@ function fetchStudentDetails() {
 
 }
 
-// store payment status per regRefNo
-let paymentStatusMap = {};
-
 function displayStudentDetails(details) {
     let content = '';
     if (details.length > 0) {
         details.forEach(detail => {
-            // use detail.paymentStatus if available, else ""
-            const paymentStatus = detail.paymentStatus === "UPI" ? "UPI" :
-                                  detail.paymentStatus === "CASH" ? "CASH" : "";
-
-            // initialize map
-            paymentStatusMap[detail.regRefNo] = paymentStatus;
-
+            paymentStatus = detail.paymentStatus == "PAID" ? "PAID" : "NOT PAID";
             content += `<div class="card mt-3">
               <div class="card-body">
                 <h5>Name: ${detail.name}</h5>
                 <p><strong>Reg No:</strong> ${detail.regRefNo}</p>
-                <p><strong>Role:</strong> ${detail.role}</p>
+                <p><strong>Gender:</strong> ${detail.gender}</p>
                 <p><strong>Payment Mode:</strong> ${detail.paymentMode}</p>
-                <p><strong>Center:</strong> ${detail.center}</p>
                 <p><strong>Department:</strong> ${detail.department}</p>
                 <p><strong>MobileNumber:</strong> ${detail.mobileNumber}</p>
-                <p><strong>Bus Required:</strong> ${detail.busRequired}</p>
-
-                <p>
-                    Payment Mode:
-                    <input type="radio"
-                           name="paymentMode${detail.rowNo}"
-                           onchange="updatePaymentStatus('${detail.rowNo}', this.value)"
-                           value="UPI"
-                           ${paymentStatus === "UPI" ? "checked" : ""}>
-                    <label for="paymentMode${detail.rowNo}UPI">UPI</label>
-
-                    <input type="radio"
-                           name="paymentMode${detail.rowNo}"
-                           onchange="updatePaymentStatus('${detail.rowNo}', this.value)"
-                           value="CASH"
-                           ${paymentStatus === "CASH" ? "checked" : ""}>
-                    <label for="paymentMode${detail.rowNo}CASH">CASH</label>
-                </p>
-
+                <p><strong>BookRequired:</strong> ${detail.bookRequired}</p>
                 <p>
                     Payment Received:
-                    <span class="${paymentStatus.toLowerCase()}" id="paid${detail.rowNo}">
-                        ${paymentStatus || "Not Selected"}
+                    <span class="${paymentStatus.toLowerCase().replace(" ", "-")}" id="paid${detail.regRefNo}">
+                        ${paymentStatus}
                     </span>
                 </p>
-                <p>
-                    Token Issued:
-                    <span id="token_issued${detail.rowNo}">${detail.tokenStatus}</span>
-                </p>
-
-                <button class="btn btn-primary"
-                        onclick="checkIn('${detail.rowNo}', 'paid')">Payment Received</button>
-                <button class="btn btn-primary"
-                        onclick="checkIn('${detail.rowNo}', 'token_issued')">Issue Token</button>
+                <p>Token Issued: <span id="token_issued${detail.regRefNo}">${detail.tokenStatus}</span></p>
+                <button class="btn btn-primary" onclick="checkIn('${detail.regRefNo}', 'paid')">Payment Received</button>
+                <button class="btn btn-primary" onclick="checkIn('${detail.regRefNo}', 'token_issued')">Issue Token</button>
               </div>
             </div>`;
         });
@@ -125,34 +91,15 @@ function displayStudentDetails(details) {
     document.getElementById('details').innerHTML = content;
 }
 
-// global function
-function updatePaymentStatus(regRefNo, value) {
-    const normalized = value.toUpperCase() === "UPI" ? "UPI" : "CASH";
-    paymentStatusMap[regRefNo] = normalized;
-
-    console.log(`Payment status for ${regRefNo} updated to: ${normalized}`);
-
-    // update display span
-    document.getElementById(`paid${regRefNo}`).innerText = normalized;
-}
-
-// checkIn with validation
 function checkIn(regRefNo, status) {
-    const paymentMode = paymentStatusMap[regRefNo] || "";
-
-    if (!paymentMode) {
-        alert("Please select a payment mode before continuing.");
-        return;
-    }
-
     document.getElementById('backdrop').style.display = 'flex';
     let statusTextMap = {
         'paid': 'Payment Received',
         'token_issued': 'Token Issued',
-    };
+    }
+    const amount = document.querySelector("#payment");
     const accessTokenField = document.querySelector("#accessToken");
-
-    fetch(`${API_URL}?action=checkInStudent&regRefNo=${regRefNo}&status=${status}&paymentMode=${paymentMode}&authToken=${accessTokenField.value}`)
+    fetch(`${API_URL}?action=checkInStudent&regRefNo=${regRefNo}&status=${status}&authToken=${accessTokenField.value}`)
         .then(response => response.json())
         .then(result => {
             document.getElementById('backdrop').style.display = 'none';
