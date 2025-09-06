@@ -1,3 +1,64 @@
+// List all students for the Report tab
+function listStudents() {
+    document.getElementById('backdrop').style.display = 'flex';
+    const accessTokenField = document.querySelector("#accessToken");
+    fetch(`${API_URL}?action=listStudentDetails&authToken=${accessTokenField.value}`)
+        .then(response => response.json())
+        .then(result => {
+            document.getElementById('backdrop').style.display = 'none';
+            if (result.status && result.status.toLowerCase() === 'success') {
+                listStudentDetails(result.data);
+            } else {
+                document.getElementById('reportTable').innerHTML = `<p class='text-danger'>${result.message || 'Failed to load data.'}</p>`;
+            }
+        })
+        .catch(() => {
+            document.getElementById('backdrop').style.display = 'none';
+            document.getElementById('reportTable').innerHTML = `<p class='text-danger'>Error retrieving data</p>`;
+        });
+}
+
+// Render student list as a table in the Report tab
+function listStudentDetails(details) {
+    if (!details || details.length === 0) {
+        document.getElementById('reportTable').innerHTML = '<p class="text-danger">No records found.</p>';
+        return;
+    }
+    let table = `<div class="table-responsive"><table class="table table-bordered table-striped">
+        <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Reg No</th>
+                <th>Role</th>
+                <th>Payment Mode</th>
+                <th>Center</th>
+                <th>Department</th>
+                <th>Mobile Number</th>
+                <th>Bus Required</th>
+                <th>Payment Status</th>
+                <th>Token Issued</th>
+            </tr>
+        </thead>
+        <tbody>`;
+    details.forEach((detail, idx) => {
+        table += `<tr>
+            <td>${idx + 1}</td>
+            <td>${detail.name || ''}</td>
+            <td>${detail.regRefNo || ''}</td>
+            <td>${detail.role || ''}</td>
+            <td>${detail.paymentMode || ''}</td>
+            <td>${detail.center || ''}</td>
+            <td>${detail.department || ''}</td>
+            <td>${detail.mobileNumber || ''}</td>
+            <td>${detail.busRequired || ''}</td>
+            <td>${detail.paymentStatus || ''}</td>
+            <td>${detail.tokenStatus || ''}</td>
+        </tr>`;
+    });
+    table += '</tbody></table></div>';
+    document.getElementById('reportTable').innerHTML = table;
+}
 const API_URL = "https://script.google.com/macros/s/AKfycbzXCQcCXIxhDG3vOhAiUGC-ltfJ8sfwo-_QSXuLuA9yQkp6H3JA1Kc4aL1sTPlE_wEk4A/exec";
 
 function toggleKeyboardType() {
