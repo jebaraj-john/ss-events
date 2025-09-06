@@ -24,7 +24,13 @@ function listStudentDetails(details) {
         document.getElementById('reportTable').innerHTML = '<p class="text-danger">No records found.</p>';
         return;
     }
-    let table = `<div class="table-responsive"><table class="table table-bordered table-striped">
+
+    // Destroy existing DataTable if it exists
+    if ($.fn.DataTable.isDataTable('#studentTable')) {
+        $('#studentTable').DataTable().destroy();
+    }
+
+    let table = `<div class="table-responsive"><table id="studentTable" class="table table-bordered table-striped">
         <thead class="table-light">
             <tr>
                 <th>#</th>
@@ -58,6 +64,30 @@ function listStudentDetails(details) {
     });
     table += '</tbody></table></div>';
     document.getElementById('reportTable').innerHTML = table;
+
+    // Initialize DataTable with search, pagination and CSV export
+    $('#studentTable').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+            {
+                extend: 'csv',
+                text: 'Download CSV',
+                className: 'btn btn-primary',
+                filename: 'KidsRetreat2025_Students_' + new Date().toISOString().split('T')[0],
+                exportOptions: {
+                    columns: [1,2,3,4,5,6,7,8,9,10] // Skip the # column
+                }
+            }
+        ],
+        pageLength: 100,
+        order: [[1, 'asc']], // Sort by Name column by default
+        search: {
+            return: true
+        },
+        language: {
+            search: "Search all columns:"
+        }
+    });
 }
 const API_URL = "https://script.google.com/macros/s/AKfycbzXCQcCXIxhDG3vOhAiUGC-ltfJ8sfwo-_QSXuLuA9yQkp6H3JA1Kc4aL1sTPlE_wEk4A/exec";
 
