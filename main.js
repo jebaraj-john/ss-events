@@ -1,3 +1,40 @@
+// Fetch and display payment summary
+function checkedInSummary() {
+    document.getElementById('backdrop').style.display = 'flex';
+    const accessTokenField = document.querySelector("#accessToken");
+    if (accessTokenField.value == "") {
+        document.getElementById('backdrop').style.display = 'none';
+        return;
+    }
+
+    fetch(`${API_URL}?action=checkedInSummary&authToken=${accessTokenField.value}`)
+        .then(response => response.json())
+        .then(result => {
+            document.getElementById('backdrop').style.display = 'none';
+            if (result.status && result.status.toLowerCase() === 'success') {
+                // Update the summary cards with the data
+                document.getElementById('totalUPI').innerText = `\u20B9${result.data.totalUPI || 0}`;
+                document.getElementById('totalCash').innerText = `\u20B9${result.data.totalCash || 0}`;
+                document.getElementById('totalAmount').innerText = `\u20B9${result.data.totalAmount || 0}`;
+            } else {
+                const messageElement = document.getElementById('checkInModalMessage');
+                messageElement.innerText = result.message || 'Failed to load summary data.';
+                messageElement.className = 'text-danger';
+                const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
+                modal.show();
+            }
+        })
+        .catch((error) => {
+            console.log(error);
+            document.getElementById('backdrop').style.display = 'none';
+            const messageElement = document.getElementById('checkInModalMessage');
+            messageElement.innerText = 'Error retrieving summary data';
+            messageElement.className = 'text-danger';
+            const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
+            modal.show();
+        });
+}
+
 // List all students for the Report tab
 function listStudents() {
     document.getElementById('backdrop').style.display = 'flex';
