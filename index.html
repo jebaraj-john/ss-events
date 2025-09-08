@@ -8,8 +8,22 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css">
     <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
     <style>
+      @keyframes blink {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+      }
       #checkInModalMessage {
         text-align: center
+      }
+      .non-veg {
+        color: red;
+        font-weight: bold;
+      }
+      .veg {
+        color: green;
+        font-weight: bold;
+        animation: blink 1s infinite;
       }
       .loader {
         border: 16px solid #f3f3f3;
@@ -120,7 +134,7 @@
         </div>
       </div>
 
-      
+
 
       <div class="row align-items-center">
         <div class="col-sm-1">

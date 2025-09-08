@@ -42,6 +42,7 @@ function listStudentDetails(details) {
                 <th>Department</th>
                 <th>Mobile Number</th>
                 <th>Bus Required</th>
+                <th>Food Preference</th>
                 <th>Payment Status</th>
                 <th>Token Issued</th>
             </tr>
@@ -58,6 +59,7 @@ function listStudentDetails(details) {
             <td>${detail.department || ''}</td>
             <td>${detail.mobileNumber || ''}</td>
             <td>${detail.busRequired || ''}</td>
+            <td>${detail.foodPreference || ''}</td>
             <td>${detail.paymentStatus || ''}</td>
             <td>${detail.tokenStatus || ''}</td>
         </tr>`;
@@ -174,6 +176,9 @@ function displayStudentDetails(details) {
                 <p><strong>Department:</strong> ${detail.department}</p>
                 <p><strong>MobileNumber:</strong> ${detail.mobileNumber}</p>
                 <p><strong>Bus Required:</strong> ${detail.busRequired}</p>
+                <p class="${detail.foodPreference.toString().toLowerCase()}">
+                    <strong>Food Preference:</strong> ${detail.foodPreference}
+                </p>
 
                 <p>
                     Payment Mode:
