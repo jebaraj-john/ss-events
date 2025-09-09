@@ -74,14 +74,15 @@ function listStudentDetails(details) {
                 <th>Name</th>
                 <th>Reg No</th>
                 <th>Role</th>
-                <th>Payment Mode</th>
+                <th>Amount to be Paid</th>
                 <th>Center</th>
+                <th>Service</th>
                 <th>Department</th>
                 <th>Mobile Number</th>
                 <th>Bus Required</th>
                 <th>Food Preference</th>
                 <th>Payment Status</th>
-                <th>Token Issued</th>
+                <th>Payment Received By</th>
             </tr>
         </thead>
         <tbody>`;
@@ -93,6 +94,7 @@ function listStudentDetails(details) {
             <td>${detail.role || ''}</td>
             <td>${detail.paymentMode || ''}</td>
             <td>${detail.center || ''}</td>
+            <td>${detail.service || ''}</td>
             <td>${detail.department || ''}</td>
             <td>${detail.mobileNumber || ''}</td>
             <td>${detail.busRequired || ''}</td>
@@ -119,7 +121,7 @@ function listStudentDetails(details) {
             }
         ],
         pageLength: 100,
-        order: [[1, 'asc']], // Sort by Name column by default
+        order: [[2, 'asc']], // Sort by Name column by default
         search: {
             return: true
         },
@@ -197,11 +199,10 @@ function displayStudentDetails(details) {
     if (details.length > 0) {
         details.forEach(detail => {
             // use detail.paymentStatus if available, else ""
-            const paymentStatus = detail.paymentStatus === "UPI" ? "UPI" :
-                                  detail.paymentStatus === "CASH" ? "CASH" : "";
+            const paymentStatus = detail.paymentStatus || "";
 
             // initialize map
-            paymentStatusMap[detail.regRefNo] = paymentStatus;
+            paymentStatusMap[detail.rowNo] = paymentStatus;
 
             content += `<div class="card mt-3">
               <div class="card-body">
@@ -241,8 +242,12 @@ function displayStudentDetails(details) {
                     </span>
                 </p>
                 <p>
-                    Token Issued:
-                    <span id="token_issued${detail.rowNo}">${detail.tokenStatus}</span>
+                    Payment Received By:
+                    <span id="payment_received_by${detail.rowNo}">${detail.paymentReceivedBy}</span>
+                </p>
+                <p>
+                    Token Issued By:
+                    <span id="token_issued${detail.rowNo}">${detail.tokenIssuedBy}</span>
                 </p>
 
                 <button class="btn btn-primary"
