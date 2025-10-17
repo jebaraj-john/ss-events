@@ -86,6 +86,24 @@ function checkIn(regRefNo) {
         });
 }
 
+function toggleKeyboardType() {
+    const input = document.getElementById('searchInput');
+    input.type = input.type === 'tel' ? 'text' : 'tel';
+    if (input.type === 'tel') {
+        input.type = 'tel';
+        document.querySelector('.toggle-btn .bi').classList.remove('bi-alphabet-uppercase');
+        document.querySelector('.toggle-btn .bi').classList.add('bi-123');
+        input.focus()
+        return;
+    }
+
+    input.type = 'text';
+    document.querySelector('.toggle-btn .bi').classList.remove('bi-123');
+    document.querySelector('.toggle-btn .bi').classList.add('bi-alphabet-uppercase');
+    input.focus()
+    return;
+}
+
 function login() {
     console.log(auth0)
     auth0.createAuth0Client({
