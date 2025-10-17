@@ -160,7 +160,7 @@ function login() {
         });
 }
 
-window.addEventListener("load", (event) => {
-    console.log("page is fully loaded");
-    login();
-});
+// window.addEventListener("load", (event) => {
+//     console.log("page is fully loaded");
+//     login();
+// });
