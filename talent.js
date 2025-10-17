@@ -86,6 +86,21 @@ function checkIn(regRefNo) {
         });
 }
 
+function unfocusAndRefocus(inputElement) {
+
+
+
+  inputElement.blur();
+
+
+  setTimeout(() => {
+    inputElement.focus();
+  }, 100); // 100ms delay
+
+
+  inputElement.focus();
+}
+
 function toggleKeyboardType() {
     const input = document.getElementById('searchInput');
     input.type = input.type === 'tel' ? 'text' : 'tel';
@@ -93,14 +108,15 @@ function toggleKeyboardType() {
         input.type = 'tel';
         document.querySelector('.toggle-btn .bi').classList.remove('bi-alphabet-uppercase');
         document.querySelector('.toggle-btn .bi').classList.add('bi-123');
-        input.focus()
+
+        unfocusAndRefocus(input);
         return;
     }
 
     input.type = 'text';
     document.querySelector('.toggle-btn .bi').classList.remove('bi-123');
     document.querySelector('.toggle-btn .bi').classList.add('bi-alphabet-uppercase');
-    input.focus()
+    unfocusAndRefocus(input);
     return;
 }
 
@@ -134,6 +150,7 @@ function login() {
 
         // Assumes a button with id "logout" in the DOM
         const logoutButton = document.getElementById("logout");
+
 
         logoutButton.addEventListener("click", (e) => {
             e.preventDefault();
