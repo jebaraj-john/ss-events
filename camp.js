@@ -1,50 +1,22 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbwUMhXBImWs4m9tgn4WR_maBTgYxrbJMZspvrtGITaRLurtJcAV2LSMoFJNlK-hjJQBWg/exec';
 
-function toggleKeyboardType() {
-    const input = document.getElementById('searchInput');
-    input.type = input.type === 'tel' ? 'text' : 'tel';
-    input.focus()
-}
-
-function setInputType(type) {
-    const input = document.getElementById("searchInput");
-    input.type = type; // Change input type
-    if (type == "tel") {
-        input.placeholder = "Enter Leader/Parent Mobile No or Reg Ref No"
-    }
-    else {
-        input.placeholder = "Enter Student/Leader Name"
-    }
-}
+const ID_PREFIX = "KC";
 
 function fetchStudentDetails() {
     let input = document.getElementById('searchInput').value;
-    if (input.length < 5 && !input.startsWith("KC")) {
-        input = "KC" + input;
+    if (input.length < 5 && !input.startsWith(ID_PREFIX)) {
+        input = ID_PREFIX + input
     }
 
-
-
     document.getElementById('backdrop').style.display = 'flex';
-    const accessTokenField = document.querySelector("#accessToken");
 
-    fetch(`${API_URL}?action=getStudentDetails&input=${input}&authToken=${accessTokenField.value}`)
+    fetch(`${API_URL}?action=getStudentDetails&input=${input}&authToken=${document.querySelector("#accessToken").value}`)
         .then(response => response.json())
-        .then(result => {
+        .then(data => {
             document.getElementById('backdrop').style.display = 'none';
-            if (result.status.toLowerCase() === 'success') {
-                displayStudentDetails(result.data);
-            } else {
-                const messageElement = document.getElementById('checkInModalMessage');
-                messageElement.innerText = result.message;
-                messageElement.className = 'text-danger';
-                const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
-                modal.show();
-            }
-
+            displayStudentDetails(data.data);
         })
-        .catch((error) => {
-            console.log(error)
+        .catch(() => {
             document.getElementById('backdrop').style.display = 'none';
             const messageElement = document.getElementById('checkInModalMessage');
             messageElement.innerText = 'Error retrieving data';
@@ -52,7 +24,6 @@ function fetchStudentDetails() {
             const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
             modal.show();
         });
-
 }
 
 function displayStudentDetails(details) {
@@ -63,46 +34,140 @@ function displayStudentDetails(details) {
               <div class="card-body">
                 <h5>Name: ${detail.name}</h5>
                 <p><strong>Reg No:</strong> ${detail.regRefNo}</p>
-                <p><strong>Role:</strong> ${detail.role}</p>
-                <p><strong>Payment Mode:</strong> ${detail.paymentMode}</p>
-                <p><strong>Center:</strong> ${detail.center}</p>
-                <p><strong>Service:</strong> ${detail.service}</p>
-                <p><strong>Department:</strong> ${detail.department}</p>
+                <p>Role: ${detail.role}</p>
+                <p>Center: ${detail.center}</p>
+                <p>Department: ${detail.department}</p>
+                <p>Service: ${detail.service}</p>
+                <p>Payment Status: ${detail.paymentStatus}</p>
                 <p>Checked In: <span id="checkedIn${detail.regRefNo}">${detail.checkedIn}</span></p>
                 <button class="btn btn-primary" onclick="checkIn('${detail.regRefNo}')">Check In</button>
               </div>
             </div>`;
         });
     } else {
-        content = '<p class="text-danger mt-3">Record not found</p>';
+        content = '<p class="text-danger mt-3">Student not found</p>';
     }
     document.getElementById('details').innerHTML = content;
 }
 
-function checkIn(regRefNo) {
-    document.getElementById('backdrop').style.display = 'flex';
+function listStudentDetails(details) {
+    if (!details || details.length === 0) {
+        document.getElementById('reportTable').innerHTML = '<p class="text-danger">No records found.</p>';
+        return;
+    }
 
+    // Destroy existing DataTable if it exists
+    if ($.fn.DataTable.isDataTable('#studentTable')) {
+        $('#studentTable').DataTable().destroy();
+    }
+
+    //<th>Food Preference</th>
+    let table = `<div class="table-responsive"><table id="studentTable" class="table table-bordered table-striped">
+        <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Reg No</th>
+                <th>Role</th>
+                <th>Center</th>
+                <th>Service</th>
+                <th>Department</th>
+                <th>Mobile Number</th>
+                <th>Payment Status</th>
+            </tr>
+        </thead>
+        <tbody>`;
+    details.forEach((detail, idx) => {
+        //<td>${detail.foodPreference || ''}</td>
+        table += `<tr>
+            <td>${idx + 1}</td>
+            <td>${detail.name || ''}</td>
+            <td>${detail.regRefNo || ''}</td>
+            <td>${detail.role || ''}</td>
+            <td>${detail.center || ''}</td>
+            <td>${detail.service || ''}</td>
+            <td>${detail.department || ''}</td>
+            <td>${detail.mobileNumber || ''}</td>
+            <td>${detail.paymentStatus || ''}</td>
+        </tr>`;
+    });
+    table += '</tbody></table></div>';
+    document.getElementById('reportTable').innerHTML = table;
+
+    // Initialize DataTable with search, pagination and CSV export
+    $('#studentTable').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+            {
+                extend: 'csv',
+                text: 'Download CSV',
+                className: 'btn btn-primary',
+                filename: 'KidsRetreat2025_Students_' + new Date().toISOString().split('T')[0],
+                exportOptions: {
+                    columns: [1,2,3,4,5,6,7,8,9,10] // Skip the # column
+                }
+            }
+        ],
+        pageLength: 100,
+        order: [[2, 'asc']], // Sort by Name column by default
+        search: {
+            return: true
+        },
+        language: {
+            search: "Search all columns:"
+        }
+    });
+}
+
+function listStudents() {
+    document.getElementById('backdrop').style.display = 'flex';
     const accessTokenField = document.querySelector("#accessToken");
-    fetch(`${API_URL}?action=checkInStudent&regRefNo=${regRefNo}&authToken=${accessTokenField.value}`)
+    fetch(`${API_URL}?action=listStudentDetails&authToken=${accessTokenField.value}`)
         .then(response => response.json())
         .then(result => {
             document.getElementById('backdrop').style.display = 'none';
+            if (result.status && result.status.toLowerCase() === 'success') {
+                listStudentDetails(result.data);
+            } else {
+                document.getElementById('reportTable').innerHTML = `<p class='text-danger'>${result.message || 'Failed to load data.'}</p>`;
+            }
+        })
+        .catch(() => {
+            document.getElementById('backdrop').style.display = 'none';
+            document.getElementById('reportTable').innerHTML = `<p class='text-danger'>Error retrieving data</p>`;
+        });
+}
 
+function checkIn(regRefNo) {
+
+    document.getElementById('backdrop').style.display = 'flex';
+
+    fetch(`${API_URL}?action=checkInStudent&regRefNo=${regRefNo}&authToken=${document.querySelector("#accessToken").value}`)
+        .then(response => response.json())
+        .then(result => {
+            // Hide backdrop
+            document.getElementById('backdrop').style.display = 'none';
+
+            // Set message and modal appearance based on result
             const messageElement = document.getElementById('checkInModalMessage');
             const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
 
             if (result.status.toLowerCase() === 'success') {
+                // Update UI for checked-in status and display success message
                 document.getElementById(`checkedIn${regRefNo}`).innerText = 'YES';
                 messageElement.innerText = 'Check-in successful!';
-                messageElement.className = 'text-success';
+                messageElement.className = 'text-success'; // Optionally style success message in green
             } else {
+                // Display failure message
                 messageElement.innerText = 'Check-in failed. Please try again.';
-                messageElement.className = 'text-danger';
+                messageElement.className = 'text-danger'; // Optionally style failure message in red
             }
 
+            // Show the modal with the appropriate message
             modal.show();
         })
         .catch(() => {
+            // Hide backdrop and show error message in modal
             document.getElementById('backdrop').style.display = 'none';
             const messageElement = document.getElementById('checkInModalMessage');
             messageElement.innerText = 'Error during check-in. Please try again.';
@@ -118,9 +183,10 @@ function login() {
         domain: "dev-sazlz3uf0genwd7a.us.auth0.com",
         clientId: "APU6p14IiXfP3Q83B1c8VvPy4cZ2YAH9",
         authorizationParams: {
-            redirect_uri: window.location.origin + "/ss-events/index.html"
+            redirect_uri: window.location.origin + "/ss-events/kidscamp.html"
         }
     }).then(async (auth0Client) => {
+
 
         console.log(auth0Client)
 
@@ -170,7 +236,7 @@ function login() {
             style="width: 40px; height: 40px;" src="${userProfile.picture}" />
         `;
         } else {
-            auth0Client.logout();
+            //auth0Client.logout();
             profileElement.style.display = "none";
             logoutButton.style.display = "none";
             auth0Client.loginWithRedirect();
