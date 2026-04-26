@@ -63,7 +63,14 @@ function displayStudentDetails(details) {
     let content = '';
     if (details.length > 0) {
         details.forEach(detail => {
-            paymentStatus = detail.paymentStatus.toUpperCase() == "PAID" ? "PAID" : "NOT PAID";
+            const paymentStatus = detail.paymentStatus.toUpperCase() == "PAID" ? "PAID" : "NOT PAID";
+            const isPaid = paymentStatus === "PAID";
+            const paymentModeText = (detail.paymentMode || "").toLowerCase();
+            const isCashMode = paymentModeText.includes("cash") || !paymentModeText.includes("online");
+            const paymentModeName = `payment_mode_${detail.regRefNo}`;
+            const cashId = `payment_mode_cash_${detail.regRefNo}`;
+            const onlineId = `payment_mode_online_${detail.regRefNo}`;
+            const paymentModeDisabledAttr = isPaid ? "disabled" : "";
             content += `<div class="card mt-3">
               <div class="card-body">
                 <h5>Name: ${detail.name}</h5>
@@ -72,7 +79,16 @@ function displayStudentDetails(details) {
                 <p><strong>Department:</strong> ${detail.department}</p>
                 <p><strong>MobileNumber:</strong> ${detail.mobileNumber}</p>
                 <p><strong>BookRequired:</strong> ${detail.bookRequired}</p>
-                <p><strong>Payment Mode:</strong> ${detail.paymentMode}</p>
+                <div class="mb-2">
+                    <strong>Payment Mode:</strong>
+                    <div class="btn-group btn-group-sm ms-2" role="group" aria-label="Payment Mode ${detail.regRefNo}">
+                        <input type="radio" class="btn-check" name="${paymentModeName}" id="${cashId}" value="Cash" autocomplete="off" ${isCashMode ? "checked" : ""} ${paymentModeDisabledAttr}>
+                        <label class="btn btn-outline-primary" for="${cashId}">Cash</label>
+
+                        <input type="radio" class="btn-check" name="${paymentModeName}" id="${onlineId}" value="UPI" autocomplete="off" ${!isCashMode ? "checked" : ""} ${paymentModeDisabledAttr}>
+                        <label class="btn btn-outline-primary" for="${onlineId}">UPI</label>
+                    </div>
+                </div>
                 <p>
                     Payment Received:
                     <span class="${paymentStatus.toLowerCase().replace(" ", "-")}" id="paid${detail.regRefNo}">
@@ -91,6 +107,18 @@ function displayStudentDetails(details) {
     document.getElementById('details').innerHTML = content;
 }
 
+function getSelectedPaymentMode(regRefNo) {
+    const selectedModeInput = document.querySelector(`input[name="payment_mode_${regRefNo}"]:checked`);
+    return selectedModeInput ? selectedModeInput.value : '';
+}
+
+function freezePaymentMode(regRefNo) {
+    const paymentModeInputs = document.querySelectorAll(`input[name="payment_mode_${regRefNo}"]`);
+    paymentModeInputs.forEach(input => {
+        input.disabled = true;
+    });
+}
+
 function checkIn(regRefNo, status) {
     document.getElementById('backdrop').style.display = 'flex';
     let statusTextMap = {
@@ -99,7 +127,16 @@ function checkIn(regRefNo, status) {
     }
     const amount = document.querySelector("#payment");
     const accessTokenField = document.querySelector("#accessToken");
-    fetch(`${API_URL}?action=checkInStudent&regRefNo=${regRefNo}&status=${status}&authToken=${accessTokenField.value}`)
+    const paymentMode = getSelectedPaymentMode(regRefNo);
+    const params = new URLSearchParams({
+        action: 'checkInStudent',
+        regRefNo: regRefNo,
+        status: status,
+        paymentMode: paymentMode,
+        authToken: accessTokenField.value
+    });
+
+    fetch(`${API_URL}?${params.toString()}`)
         .then(response => response.json())
         .then(result => {
             document.getElementById('backdrop').style.display = 'none';
@@ -109,6 +146,9 @@ function checkIn(regRefNo, status) {
 
             if (result.status.toLowerCase() === 'success') {
                 document.getElementById(`${status}${regRefNo}`).innerText = 'YES';
+                if (status === 'paid') {
+                    freezePaymentMode(regRefNo);
+                }
                 messageElement.innerText = `${statusTextMap[status]} successful!`;
                 messageElement.className = 'text-success';
             } else {
