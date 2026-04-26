@@ -21,7 +21,7 @@ function fetchStudentDetails() {
     let input = document.getElementById('searchInput').value;
 
 
-
+    debugger;
 
     document.getElementById('backdrop').style.display = 'flex';
     const accessTokenField = document.querySelector("#accessToken");
@@ -135,7 +135,8 @@ function login() {
         domain: "dev-sazlz3uf0genwd7a.us.auth0.com",
         clientId: "APU6p14IiXfP3Q83B1c8VvPy4cZ2YAH9",
         authorizationParams: {
-            redirect_uri: window.location.origin + "/ss-events/index.html"
+            redirect_uri: window.location.origin + "/ss-events/vbs.html",
+            logout_uri: window.location.origin + "/ss-events/vbs.html"
         }
     }).then(async (auth0Client) => {
 
@@ -165,6 +166,7 @@ function login() {
             //auth0Client.logout();
             auth0Client.logout({
                 async onRedirect(url) {
+                    console.log("Redirecting to:", url);
                     window.location.replace(url);
                 }
             });
@@ -205,5 +207,5 @@ function login() {
 
 window.addEventListener("load", (event) => {
     console.log("page is fully loaded");
-    login();
+    //login();
 });

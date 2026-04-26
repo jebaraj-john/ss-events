@@ -1,20 +1,54 @@
-const API_URL = 'https://script.google.com/macros/s/AKfycbygLkC7s4OIDYWxK6NbmSHzrV50LtxGSnYrlOZ8hPiyhGVkP0-1kECQ8zOjFJm89P-BFQ/exec';
+const API_URL = "https://script.google.com/macros/s/AKfycbxmH-igJu1GWaT_y0SdimTKypuZtyQTHJ9f7aoYnqnM3wRreyUAzU4yS8Rg-3FV6sZ8/exec";
+
+function toggleKeyboardType() {
+    const input = document.getElementById('searchInput');
+    input.type = input.type === 'tel' ? 'text' : 'tel';
+    input.focus()
+}
+
+function setInputType(type) {
+    const input = document.getElementById("searchInput");
+    input.type = type; // Change input type
+    if (type == "tel") {
+        input.placeholder = "Enter Leader/Parent Mobile No or Reg Ref No"
+    }
+    else {
+        input.placeholder = "Enter Student/Leader Name"
+    }
+}
 
 function fetchStudentDetails() {
     let input = document.getElementById('searchInput').value;
-    if (input.length < 5 && !input.startsWith("TC")) {
-        input = "TC" + input
-    }
+
+
+    debugger;
 
     document.getElementById('backdrop').style.display = 'flex';
-
-    fetch(`${API_URL}?action=getStudentDetails&input=${input}`)
+    const accessTokenField = document.querySelector("#accessToken");
+    // displayStudentDetails([ { name: 'Ashnika Angel K',
+    //     regRefNo: 'VBSNC0005',
+    //     gender: 'Female',
+    //     paymentMode: 'Cash (Kindly make the Registration Fee Rs 50 at the Sunday School Registration Counter at the respective Centers)',
+    //     department: 'Inter (VIII & IX)',
+    //     mobileNumber: 7200007648,
+    //     bookRequired: 'English' } ]);
+    fetch(`${API_URL}?action=getStudentDetails&input=${input}&authToken=${accessTokenField.value}`)
         .then(response => response.json())
-        .then(data => {
+        .then(result => {
             document.getElementById('backdrop').style.display = 'none';
-            displayStudentDetails(data.data);
+            if (result.status.toLowerCase() === 'success') {
+                displayStudentDetails(result.data);
+            } else {
+                const messageElement = document.getElementById('checkInModalMessage');
+                messageElement.innerText = result.message;
+                messageElement.className = 'text-danger';
+                const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
+                modal.show();
+            }
+
         })
-        .catch(() => {
+        .catch((error) => {
+            console.log(error)
             document.getElementById('backdrop').style.display = 'none';
             const messageElement = document.getElementById('checkInModalMessage');
             messageElement.innerText = 'Error retrieving data';
@@ -22,64 +56,72 @@ function fetchStudentDetails() {
             const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
             modal.show();
         });
+
 }
 
 function displayStudentDetails(details) {
     let content = '';
     if (details.length > 0) {
         details.forEach(detail => {
+            paymentStatus = detail.paymentStatus.toUpperCase() == "PAID" ? "PAID" : "NOT PAID";
             content += `<div class="card mt-3">
               <div class="card-body">
-                <h5>Student Name: ${detail.studentName}</h5>
+                <h5>Name: ${detail.name}</h5>
                 <p><strong>Reg No:</strong> ${detail.regRefNo}</p>
-                <p>Teacher: ${detail.teacherName}</p>
-                <p>Department: ${detail.department}</p>
-                <p>Service: ${detail.service}</p>
-                <p>Event: ${detail.eventParticipating}</p>
-                <p>Checked In: <span id="checkedIn${detail.regRefNo}">${detail.checkedIn}</span></p>
-                <button class="btn btn-primary" onclick="checkIn('${detail.regRefNo}')">Check In</button>
+                <p><strong>Gender:</strong> ${detail.gender}</p>
+                <p><strong>Department:</strong> ${detail.department}</p>
+                <p><strong>MobileNumber:</strong> ${detail.mobileNumber}</p>
+                <p><strong>BookRequired:</strong> ${detail.bookRequired}</p>
+                <p><strong>Payment Mode:</strong> ${detail.paymentMode}</p>
+                <p>
+                    Payment Received:
+                    <span class="${paymentStatus.toLowerCase().replace(" ", "-")}" id="paid${detail.regRefNo}">
+                        ${paymentStatus}
+                    </span>
+                </p>
+                <p>Token Issued: <span id="token_issued${detail.regRefNo}">${detail.tokenStatus}</span></p>
+                <button class="btn btn-primary" onclick="checkIn('${detail.regRefNo}', 'paid')">Payment Received</button>
+                <button class="btn btn-primary" onclick="checkIn('${detail.regRefNo}', 'token_issued')">Issue Token</button>
               </div>
             </div>`;
         });
     } else {
-        content = '<p class="text-danger mt-3">Student not found</p>';
+        content = '<p class="text-danger mt-3">Record not found</p>';
     }
     document.getElementById('details').innerHTML = content;
 }
 
-function checkIn(regRefNo) {
-
+function checkIn(regRefNo, status) {
     document.getElementById('backdrop').style.display = 'flex';
-
-    fetch(`${API_URL}?action=checkInStudent&regRefNo=${regRefNo}`)
+    let statusTextMap = {
+        'paid': 'Payment Received',
+        'token_issued': 'Token Issued',
+    }
+    const amount = document.querySelector("#payment");
+    const accessTokenField = document.querySelector("#accessToken");
+    fetch(`${API_URL}?action=checkInStudent&regRefNo=${regRefNo}&status=${status}&authToken=${accessTokenField.value}`)
         .then(response => response.json())
         .then(result => {
-            // Hide backdrop
             document.getElementById('backdrop').style.display = 'none';
 
-            // Set message and modal appearance based on result
             const messageElement = document.getElementById('checkInModalMessage');
             const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
 
             if (result.status.toLowerCase() === 'success') {
-                // Update UI for checked-in status and display success message
-                document.getElementById(`checkedIn${regRefNo}`).innerText = 'YES';
-                messageElement.innerText = 'Check-in successful!';
-                messageElement.className = 'text-success'; // Optionally style success message in green
+                document.getElementById(`${status}${regRefNo}`).innerText = 'YES';
+                messageElement.innerText = `${statusTextMap[status]} successful!`;
+                messageElement.className = 'text-success';
             } else {
-                // Display failure message
-                messageElement.innerText = 'Check-in failed. Please try again.';
-                messageElement.className = 'text-danger'; // Optionally style failure message in red
+                messageElement.innerText = `${statusTextMap[status]} failed. Please try again.`;
+                messageElement.className = 'text-danger';
             }
 
-            // Show the modal with the appropriate message
             modal.show();
         })
         .catch(() => {
-            // Hide backdrop and show error message in modal
             document.getElementById('backdrop').style.display = 'none';
             const messageElement = document.getElementById('checkInModalMessage');
-            messageElement.innerText = 'Error during check-in. Please try again.';
+            messageElement.innerText = `Error during ${statusTextMap[status]}. Please try again.`;
             messageElement.className = 'text-danger';
             const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
             modal.show();
@@ -144,7 +186,7 @@ function login() {
             style="width: 40px; height: 40px;" src="${userProfile.picture}" />
         `;
         } else {
-            auth0Client.logout();
+            //auth0Client.logout();
             profileElement.style.display = "none";
             logoutButton.style.display = "none";
             auth0Client.loginWithRedirect();

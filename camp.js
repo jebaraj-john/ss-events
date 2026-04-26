@@ -1,258 +1,238 @@
-const API_URL = 'https://script.google.com/macros/s/AKfycbwUMhXBImWs4m9tgn4WR_maBTgYxrbJMZspvrtGITaRLurtJcAV2LSMoFJNlK-hjJQBWg/exec';
-
-const ID_PREFIX = "KC";
-
-function fetchStudentDetails() {
-    let input = document.getElementById('searchInput').value;
-    if (input.length < 5 && !input.startsWith(ID_PREFIX)) {
-        input = ID_PREFIX + input
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Kids Camp 2025 Check-In</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css">
+    <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
+    <style>
+      @keyframes blink {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+      }
+      #checkInModalMessage {
+        text-align: center
+      }
+      .non-veg {
+        color: red;
+        font-weight: bold;
+      }
+      .veg {
+        color: green;
+        font-weight: bold;
+        animation: blink 1s infinite;
+      }
+      .loader {
+        border: 16px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 16px solid blue;
+        width: 60px;
+        height: 60px;
+        animation: spin 2s linear infinite;
+      }
+      .backdrop {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none;
+        align-items: center; justify-content: center; background: rgba(0,0,0,0.5);
+      }
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      .header {
+        display: flex;
+      }
+      .header-title {
+        flex-grow: 2;
+      }
+      .input-group {
+      position: relative;
+      margin-top: 10px
     }
 
-    document.getElementById('backdrop').style.display = 'flex';
+    .toggle-btn {
 
-    fetch(`${API_URL}?action=getStudentDetails&input=${input}&authToken=${document.querySelector("#accessToken").value}`)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('backdrop').style.display = 'none';
-            displayStudentDetails(data.data);
-        })
-        .catch(() => {
-            document.getElementById('backdrop').style.display = 'none';
-            const messageElement = document.getElementById('checkInModalMessage');
-            messageElement.innerText = 'Error retrieving data';
-            messageElement.className = 'text-danger';
-            const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
-            modal.show();
-        });
-}
+      border: 1px solid #ced4da;
 
-function displayStudentDetails(details) {
-    let content = '';
-    if (details.length > 0) {
-        details.forEach(detail => {
-            content += `<div class="card mt-3">
+
+
+      cursor: pointer;
+      color: #6c757d;
+    }
+    .paid {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .not-paid {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+
+    .toggle-btn:hover {
+      color: #495057;
+    }
+    </style>
+
+  </head>
+  <body>
+    <div class="container">
+      <!-- Tabs -->
+      <ul class="nav nav-tabs mt-3" id="mainTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="checkin-tab" data-bs-toggle="tab" data-bs-target="#checkin" type="button" role="tab" aria-controls="checkin" aria-selected="true">CheckIn</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="report-tab" data-bs-toggle="tab" data-bs-target="#report" type="button" role="tab" aria-controls="report" aria-selected="false" onclick="listStudents()">Report</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary" type="button" role="tab" aria-controls="summary" aria-selected="false" onclick="checkedInSummary()">Summary</button>
+        </li>
+      </ul>
+      <input type="hidden" id="accessToken" class="form-control">
+      <div class="tab-content" id="mainTabsContent">
+        <div class="tab-pane fade show active" id="checkin" role="tabpanel" aria-labelledby="checkin-tab">
+
+
+      <!-- Bootstrap Modal -->
+      <div class="modal fade" id="checkInModal" tabindex="-1" aria-labelledby="checkInModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="checkInModalLabel">Check-In Status</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="checkInModalMessage">
+              <!-- Success or failure message will appear here -->
+            </div>
+            <div class="modal-footer">
+
+              <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="header d-flex align-items-center justify-content-between bg-light shadow-sm p-3">
+        <!-- Left Section -->
+        <div class="header-left">
+          <h1 class="header-title m-0">Kids Retreat  2025 Check-In</h1>
+        </div>
+
+        <!-- Right Section -->
+        <div class="header-right d-flex align-items-center">
+          <!-- User Profile -->
+          <div id="profile" class="d-flex align-items-center me-3">
+
+          </div>
+
+          <!-- Logout Button -->
+          <button id="logout" type="button" class="btn btn-outline-secondary d-flex align-items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                 class="bi bi-box-arrow-right me-2" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0z"></path>
+              <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"></path>
+            </svg>
+            Log Out
+          </button>
+        </div>
+      </div>
+
+
+
+      <div class="row align-items-center">
+        <div class="col-sm-1">
+          <label>Search By </label>
+        </div>
+        <div class="col-sm">
+          <div class="btn-group" role="group" aria-label="Toggle Input Type">
+            <input
+              type="radio"
+              class="btn-check"
+              name="inputTypeToggle"
+              id="radioText"
+              autocomplete="off"
+              onchange="setInputType('text')">
+            <label class="btn btn-outline-primary" for="radioText">Name</label>
+
+            <input
+              type="radio"
+              class="btn-check"
+              name="inputTypeToggle"
+              id="radioTel"
+              autocomplete="off"
+              onchange="setInputType('tel')"
+              checked>
+            <label class="btn btn-outline-primary" for="radioTel">Reg No/Mobile No</label>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <input type="tel" id="searchInput" class="form-control" placeholder="Enter Parent Mobile No or Reg Ref No">
+          <button class="toggle-btn"  onclick="toggleKeyboardType()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-keyboard" viewBox="0 0 16 16">
+              <path d="M14 5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM2 4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/>
+              <path d="M13 10.25a.25.25 0 0 1 .25-.25h.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-.5a.25.25 0 0 1-.25-.25zm0-2a.25.25 0 0 1 .25-.25h.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-.5a.25.25 0 0 1-.25-.25zm-5 0A.25.25 0 0 1 8.25 8h.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-.5A.25.25 0 0 1 8 8.75zm2 0a.25.25 0 0 1 .25-.25h1.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-1.5a.25.25 0 0 1-.25-.25zm1 2a.25.25 0 0 1 .25-.25h.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-.5a.25.25 0 0 1-.25-.25zm-5-2A.25.25 0 0 1 6.25 8h.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-.5A.25.25 0 0 1 6 8.75zm-2 0A.25.25 0 0 1 4.25 8h.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-.5A.25.25 0 0 1 4 8.75zm-2 0A.25.25 0 0 1 2.25 8h.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-.5A.25.25 0 0 1 2 8.75zm11-2a.25.25 0 0 1 .25-.25h.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-.5a.25.25 0 0 1-.25-.25zm-2 0a.25.25 0 0 1 .25-.25h.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-.5a.25.25 0 0 1-.25-.25zm-2 0A.25.25 0 0 1 9.25 6h.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-.5A.25.25 0 0 1 9 6.75zm-2 0A.25.25 0 0 1 7.25 6h.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-.5A.25.25 0 0 1 7 6.75zm-2 0A.25.25 0 0 1 5.25 6h.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-.5A.25.25 0 0 1 5 6.75zm-3 0A.25.25 0 0 1 2.25 6h1.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-1.5A.25.25 0 0 1 2 6.75zm0 4a.25.25 0 0 1 .25-.25h.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-.5a.25.25 0 0 1-.25-.25zm2 0a.25.25 0 0 1 .25-.25h5.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-5.5a.25.25 0 0 1-.25-.25z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <button class="btn btn-primary mt-2" onclick="fetchStudentDetails()">Search</button>
+      <div id="details"></div>
+        </div>
+        <div class="tab-pane fade" id="report" role="tabpanel" aria-labelledby="report-tab">
+          <div id="reportTable" class="mt-4"></div>
+        </div>
+        <div class="tab-pane fade" id="summary" role="tabpanel" aria-labelledby="summary-tab">
+          <div id="summaryContent" class="mt-4">
+            <div class="card">
               <div class="card-body">
-                <h5>Name: ${detail.name}</h5>
-                <p><strong>Reg No:</strong> ${detail.regRefNo}</p>
-                <p>Role: ${detail.role}</p>
-                <p>Center: ${detail.center}</p>
-                <p>Department: ${detail.department}</p>
-                <p>Service: ${detail.service}</p>
-                <p>Payment Status: ${detail.paymentStatus}</p>
-                <p>Checked In: <span id="checkedIn${detail.regRefNo}">${detail.checkedIn}</span></p>
-                <button class="btn btn-primary" onclick="checkIn('${detail.regRefNo}')">Check In</button>
+                <h3 class="card-title mb-4">Payment Summary</h3>
+                <div class="row">
+                  <div class="col-md-4">
+                    <div class="card bg-light">
+                      <div class="card-body">
+                        <h5 class="card-title">Total UPI</h5>
+                        <p class="card-text h3" id="totalUPI"> 0</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="card bg-light">
+                      <div class="card-body">
+                        <h5 class="card-title">Total Cash</h5>
+                        <p class="card-text h3" id="totalCash">0</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="card bg-light">
+                      <div class="card-body">
+                        <h5 class="card-title">Total Amount</h5>
+                        <p class="card-text h3" id="totalAmount">0</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>`;
-        });
-    } else {
-        content = '<p class="text-danger mt-3">Student not found</p>';
-    }
-    document.getElementById('details').innerHTML = content;
-}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="backdrop" class="backdrop">
 
-function listStudentDetails(details) {
-    if (!details || details.length === 0) {
-        document.getElementById('reportTable').innerHTML = '<p class="text-danger">No records found.</p>';
-        return;
-    }
-
-    // Destroy existing DataTable if it exists
-    if ($.fn.DataTable.isDataTable('#studentTable')) {
-        $('#studentTable').DataTable().destroy();
-    }
-
-    //<th>Food Preference</th>
-    let table = `<div class="table-responsive"><table id="studentTable" class="table table-bordered table-striped">
-        <thead class="table-light">
-            <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Reg No</th>
-                <th>Role</th>
-                <th>Center</th>
-                <th>Service</th>
-                <th>Department</th>
-                <th>Mobile Number</th>
-                <th>Payment Status</th>
-            </tr>
-        </thead>
-        <tbody>`;
-    details.forEach((detail, idx) => {
-        //<td>${detail.foodPreference || ''}</td>
-        table += `<tr>
-            <td>${idx + 1}</td>
-            <td>${detail.name || ''}</td>
-            <td>${detail.regRefNo || ''}</td>
-            <td>${detail.role || ''}</td>
-            <td>${detail.center || ''}</td>
-            <td>${detail.service || ''}</td>
-            <td>${detail.department || ''}</td>
-            <td>${detail.mobileNumber || ''}</td>
-            <td>${detail.paymentStatus || ''}</td>
-        </tr>`;
-    });
-    table += '</tbody></table></div>';
-    document.getElementById('reportTable').innerHTML = table;
-
-    // Initialize DataTable with search, pagination and CSV export
-    $('#studentTable').DataTable({
-        dom: 'Bfrtip',
-        buttons: [
-            {
-                extend: 'csv',
-                text: 'Download CSV',
-                className: 'btn btn-primary',
-                filename: 'KidsRetreat2025_Students_' + new Date().toISOString().split('T')[0],
-                exportOptions: {
-                    columns: [1,2,3,4,5,6,7,8,9,10] // Skip the # column
-                }
-            }
-        ],
-        pageLength: 100,
-        order: [[2, 'asc']], // Sort by Name column by default
-        search: {
-            return: true
-        },
-        language: {
-            search: "Search all columns:"
-        }
-    });
-}
-
-function listStudents() {
-    document.getElementById('backdrop').style.display = 'flex';
-    const accessTokenField = document.querySelector("#accessToken");
-    fetch(`${API_URL}?action=listStudentDetails&authToken=${accessTokenField.value}`)
-        .then(response => response.json())
-        .then(result => {
-            document.getElementById('backdrop').style.display = 'none';
-            if (result.status && result.status.toLowerCase() === 'success') {
-                listStudentDetails(result.data);
-            } else {
-                document.getElementById('reportTable').innerHTML = `<p class='text-danger'>${result.message || 'Failed to load data.'}</p>`;
-            }
-        })
-        .catch(() => {
-            document.getElementById('backdrop').style.display = 'none';
-            document.getElementById('reportTable').innerHTML = `<p class='text-danger'>Error retrieving data</p>`;
-        });
-}
-
-function checkIn(regRefNo) {
-
-    document.getElementById('backdrop').style.display = 'flex';
-
-    fetch(`${API_URL}?action=checkInStudent&regRefNo=${regRefNo}&authToken=${document.querySelector("#accessToken").value}`)
-        .then(response => response.json())
-        .then(result => {
-            // Hide backdrop
-            document.getElementById('backdrop').style.display = 'none';
-
-            // Set message and modal appearance based on result
-            const messageElement = document.getElementById('checkInModalMessage');
-            const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
-
-            if (result.status.toLowerCase() === 'success') {
-                // Update UI for checked-in status and display success message
-                document.getElementById(`checkedIn${regRefNo}`).innerText = 'YES';
-                messageElement.innerText = 'Check-in successful!';
-                messageElement.className = 'text-success'; // Optionally style success message in green
-            } else {
-                // Display failure message
-                messageElement.innerText = 'Check-in failed. Please try again.';
-                messageElement.className = 'text-danger'; // Optionally style failure message in red
-            }
-
-            // Show the modal with the appropriate message
-            modal.show();
-        })
-        .catch(() => {
-            // Hide backdrop and show error message in modal
-            document.getElementById('backdrop').style.display = 'none';
-            const messageElement = document.getElementById('checkInModalMessage');
-            messageElement.innerText = 'Error during check-in. Please try again.';
-            messageElement.className = 'text-danger';
-            const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
-            modal.show();
-        });
-}
-
-function login() {
-    console.log(auth0)
-    auth0.createAuth0Client({
-        domain: "dev-sazlz3uf0genwd7a.us.auth0.com",
-        clientId: "APU6p14IiXfP3Q83B1c8VvPy4cZ2YAH9",
-        authorizationParams: {
-            redirect_uri: window.location.origin + "/ss-events/kidscamp.html"
-        }
-    }).then(async (auth0Client) => {
-
-
-        console.log(auth0Client)
-
-
-        // const loginButton = document.querySelector("#loginBtn");
-
-        // loginButton.addEventListener("click", (e) => {
-        //     e.preventDefault();
-        //     auth0Client.loginWithRedirect();
-        // });
-
-
-        if (location.search.includes("state=") &&
-            (location.search.includes("code=") ||
-                location.search.includes("error="))) {
-            await auth0Client.handleRedirectCallback();
-            window.history.replaceState({}, document.title, "/ss-events");
-        }
-
-        // Assumes a button with id "logout" in the DOM
-        const logoutButton = document.getElementById("logout");
-
-        logoutButton.addEventListener("click", (e) => {
-            e.preventDefault();
-            //auth0Client.logout();
-            auth0Client.logout({
-                async onRedirect(url) {
-                    window.location.replace(url);
-                }
-            });
-            //auth0Client.loginWithRedirect();
-        });
-
-        const isAuthenticated = await auth0Client.isAuthenticated();
-
-
-        // Assumes an element with id "profile" in the DOM
-        const profileElement = document.getElementById("profile");
-
-        if (isAuthenticated) {
-            const userProfile = await auth0Client.getUser();
-            logoutButton.style.display = "block";
-            profileElement.style.display = "block";
-            profileElement.innerHTML = `
-            <p style="margin: 0 3px 0px 0px;">${userProfile.name}</p>
-            <img alt="User Icon" class="rounded-circle me-2"
-            style="width: 40px; height: 40px;" src="${userProfile.picture}" />
-        `;
-        } else {
-            //auth0Client.logout();
-            profileElement.style.display = "none";
-            logoutButton.style.display = "none";
-            auth0Client.loginWithRedirect();
-        }
-        const accessTokenField = document.querySelector("#accessToken");
-        const accessToken = await auth0Client.getTokenSilently();
-        accessTokenField.value = accessToken;
-
-        console.log(accessToken)
-    })
-        .catch((error) => {
-            console.log(error)
-        });
-}
-
-window.addEventListener("load", (event) => {
-    console.log("page is fully loaded");
-    login();
-});
+      <div class="loader"></div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+    <script src="./camp.js">
+    </script>
+  </body>
+</html>
