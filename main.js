@@ -333,7 +333,7 @@ function login() {
         domain: "dev-sazlz3uf0genwd7a.us.auth0.com",
         clientId: "APU6p14IiXfP3Q83B1c8VvPy4cZ2YAH9",
         authorizationParams: {
-            redirect_uri: window.location.origin + "/ss-events/kidsretreat.html"
+            redirect_uri: window.location.origin + "/ss-events/index.html"
         }
     }).then(async (auth0Client) => {
 
@@ -352,7 +352,7 @@ function login() {
             (location.search.includes("code=") ||
                 location.search.includes("error="))) {
             await auth0Client.handleRedirectCallback();
-            window.history.replaceState({}, document.title, "/ss-events/kidsretreat.html");
+            window.history.replaceState({}, document.title, "/ss-events");
         }
 
         // Assumes a button with id "logout" in the DOM
@@ -385,7 +385,7 @@ function login() {
             style="width: 40px; height: 40px;" src="${userProfile.picture}" />
         `;
         } else {
-            auth0Client.logout();
+            //auth0Client.logout();
             profileElement.style.display = "none";
             logoutButton.style.display = "none";
             auth0Client.loginWithRedirect();
