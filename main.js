@@ -105,6 +105,75 @@ function appendDetailsMessage(message, className) {
     ui.details.innerHTML = `<p class="${className}">${message}</p>`;
 }
 
+function renderSearchLoadingSkeleton(cardCount = 2) {
+    let content = '';
+
+    for (let index = 0; index < cardCount; index++) {
+        content += `<div class="card search-result-card search-skeleton-card mt-3">
+            <div class="card-body">
+                <div class="search-result-top">
+                    <div class="w-100">
+                        <div class="skeleton-line skeleton-role mb-2"></div>
+                        <div class="skeleton-line skeleton-name mb-3"></div>
+                        <div class="search-result-pills">
+                            <span class="result-pill skeleton-pill"></span>
+                            <span class="result-pill skeleton-pill"></span>
+                            <span class="result-pill skeleton-pill"></span>
+                        </div>
+                    </div>
+                    <div class="search-result-status">
+                        <span class="status-chip skeleton-chip"></span>
+                        <span class="status-caption">Loading status</span>
+                    </div>
+                </div>
+
+                <div class="search-result-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Mobile</span>
+                        <span class="skeleton-line skeleton-value"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Bus Required</span>
+                        <span class="skeleton-line skeleton-value"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Reg Amount</span>
+                        <span class="skeleton-line skeleton-value"></span>
+                    </div>
+                    <div class="detail-item detail-item-wide">
+                        <span class="detail-label">Payment / Token By</span>
+                        <div class="detail-inline-pair">
+                            <span class="detail-inline-block">
+                                <span class="detail-inline-key">Payment</span>
+                                <span class="skeleton-line skeleton-value skeleton-inline"></span>
+                            </span>
+                            <span class="detail-inline-block">
+                                <span class="detail-inline-key">Token</span>
+                                <span class="skeleton-line skeleton-value skeleton-inline"></span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="payment-mode-panel">
+                    <div class="detail-label mb-2">Select Payment Mode</div>
+                    <div class="payment-choice-group">
+                        <span class="payment-choice skeleton-choice"></span>
+                        <span class="payment-choice skeleton-choice"></span>
+                    </div>
+                </div>
+
+                <div class="search-result-actions">
+                    <span class="btn btn-primary disabled skeleton-button"></span>
+                    <span class="btn btn-outline-primary disabled skeleton-button"></span>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    ui.details.innerHTML = content;
+}
+
 async function fetchJsonWithTimeout(url, options = {}) {
     const { timeoutMs = READ_TIMEOUT_MS, retries = 0, signal } = options;
     let attempt = 0;
@@ -372,7 +441,7 @@ function fetchStudentDetails() {
     inFlight.searchController = searchController;
 
     setSearchLoading(true);
-    appendDetailsMessage('Searching...', 'text-muted mt-3');
+    renderSearchLoadingSkeleton();
 
     fetchJsonWithTimeout(`${API_URL}?action=getStudentDetails&input=${input}&authToken=${authToken}`, {
         timeoutMs: READ_TIMEOUT_MS,

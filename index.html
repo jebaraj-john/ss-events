@@ -295,6 +295,95 @@
       font-weight: 600;
     }
 
+    .search-skeleton-card {
+      overflow: hidden;
+    }
+
+    .skeleton-line,
+    .skeleton-pill,
+    .skeleton-chip,
+    .skeleton-choice,
+    .skeleton-button {
+      position: relative;
+      overflow: hidden;
+      background: #e8edf5;
+    }
+
+    .skeleton-line::after,
+    .skeleton-pill::after,
+    .skeleton-chip::after,
+    .skeleton-choice::after,
+    .skeleton-button::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      transform: translateX(-100%);
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+      animation: skeleton-shimmer 1.4s infinite;
+    }
+
+    .skeleton-role {
+      width: 80px;
+      height: 10px;
+      border-radius: 999px;
+    }
+
+    .skeleton-name {
+      width: 65%;
+      height: 22px;
+      border-radius: 10px;
+    }
+
+    .skeleton-pill {
+      width: 88px;
+      height: 30px;
+      border-radius: 999px;
+      padding: 0;
+      border: 0;
+    }
+
+    .skeleton-chip {
+      min-width: 110px;
+      min-height: 35px;
+      border-radius: 999px;
+      background: #dfe7f2;
+    }
+
+    .skeleton-value {
+      width: 100%;
+      height: 16px;
+      border-radius: 8px;
+      margin-top: 0.2rem;
+    }
+
+    .skeleton-inline {
+      min-width: 90px;
+      width: 100%;
+    }
+
+    .skeleton-choice {
+      min-width: 120px;
+      min-height: 46px;
+      border-radius: 12px;
+      border: 0;
+      background: #e4ebf7;
+    }
+
+    .skeleton-button {
+      min-width: 150px;
+      min-height: 38px;
+      border-radius: 12px;
+      border: 0;
+      opacity: 1;
+      pointer-events: none;
+    }
+
+    @keyframes skeleton-shimmer {
+      100% {
+        transform: translateX(100%);
+      }
+    }
+
     @media (min-width: 768px) {
       .search-result-card .card-body {
         padding: 1.25rem;
