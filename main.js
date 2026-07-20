@@ -35,6 +35,26 @@ function initUiRefs() {
     ui.reportStatus = document.getElementById('reportStatus');
     ui.summaryStatus = document.getElementById('summaryStatus');
     ui.summaryPaymentsTable = document.getElementById('summaryPaymentsTable');
+    ui.disputeModal = document.getElementById('disputeModal');
+    ui.disputeStepQuestion = document.getElementById('disputeStepQuestion');
+    ui.disputeStepDetails = document.getElementById('disputeStepDetails');
+    ui.disputeRowNo = document.getElementById('disputeRowNo');
+    ui.disputeRemarks = document.getElementById('disputeRemarks');
+    ui.disputeIssueTokenBtn = document.getElementById('disputeIssueTokenBtn');
+    ui.disputePaidModeUpi = document.getElementById('disputePaidModeUPI');
+    ui.disputePaidModeCash = document.getElementById('disputePaidModeCASH');
+    ui.upiScreenshotProof = document.getElementById('upiScreenshotProof');
+    ui.upiScreenshotProofGroup = document.getElementById('upiScreenshotProofGroup');
+}
+
+function toggleUpiScreenshotProofVisibility() {
+    const isUpiSelected = Boolean(ui.disputePaidModeUpi && ui.disputePaidModeUpi.checked);
+    if (ui.upiScreenshotProofGroup) {
+        ui.upiScreenshotProofGroup.style.display = isUpiSelected ? 'block' : 'none';
+    }
+    if (!isUpiSelected && ui.upiScreenshotProof) {
+        ui.upiScreenshotProof.checked = false;
+    }
 }
 
 function getCheckInModal() {
@@ -51,6 +71,174 @@ function showModalMessage(message, isSuccess) {
     if (modal) {
         modal.show();
     }
+}
+
+function getDisputeModal() {
+    if (!ui.disputeModal) {
+        return null;
+    }
+    return bootstrap.Modal.getOrCreateInstance(ui.disputeModal);
+}
+
+function openPaymentDisputeDialog(rowNo) {
+    if (!ui.disputeModal || !ui.disputeRowNo || !ui.disputeStepQuestion || !ui.disputeStepDetails) {
+        return;
+    }
+
+    ui.disputeRowNo.value = rowNo;
+    ui.disputeStepQuestion.style.display = 'block';
+    ui.disputeStepDetails.style.display = 'none';
+    if (ui.disputeRemarks) {
+        ui.disputeRemarks.value = '';
+    }
+    if (ui.disputeIssueTokenBtn) {
+        ui.disputeIssueTokenBtn.style.display = 'none';
+    }
+    if (ui.disputePaidModeUpi) {
+        ui.disputePaidModeUpi.checked = false;
+    }
+    if (ui.disputePaidModeCash) {
+        ui.disputePaidModeCash.checked = false;
+    }
+    if (ui.upiScreenshotProof) {
+        ui.upiScreenshotProof.checked = false;
+    }
+    toggleUpiScreenshotProofVisibility();
+
+    const modal = getDisputeModal();
+    if (modal) {
+        modal.show();
+    }
+}
+
+function handleDisputeAnswer(hasDispute) {
+    if (!hasDispute) {
+        const modal = getDisputeModal();
+        if (modal) {
+            modal.hide();
+        }
+        return;
+    }
+
+    if (ui.disputeStepQuestion) {
+        ui.disputeStepQuestion.style.display = 'none';
+    }
+    if (ui.disputeStepDetails) {
+        ui.disputeStepDetails.style.display = 'block';
+    }
+    if (ui.disputeIssueTokenBtn) {
+        ui.disputeIssueTokenBtn.style.display = 'inline-block';
+    }
+    if (ui.disputeRemarks) {
+        ui.disputeRemarks.focus();
+    }
+}
+
+function issueTokenForDispute() {
+    const rowNo = ui.disputeRowNo ? ui.disputeRowNo.value : '';
+    const remarks = ui.disputeRemarks ? ui.disputeRemarks.value.trim() : '';
+    const selectedPaidMode = ui.disputePaidModeUpi && ui.disputePaidModeUpi.checked
+        ? 'UPI'
+        : (ui.disputePaidModeCash && ui.disputePaidModeCash.checked ? 'CASH' : '');
+    const isUpiScreenshotShown = Boolean(ui.upiScreenshotProof && ui.upiScreenshotProof.checked);
+    const authToken = (ui.accessTokenField && ui.accessTokenField.value) || '';
+
+    if (!rowNo) {
+        return;
+    }
+
+    if (!remarks) {
+        alert('If user already paid, fill the remarks box.');
+        return;
+    }
+
+    if (!selectedPaidMode) {
+        alert('Please select payment mode paid by user.');
+        return;
+    }
+
+    if (!authToken) {
+        alert('Authentication not ready. Please wait and try again.');
+        return;
+    }
+
+    const actionKey = `${rowNo}:dispute_token_issued`;
+    if (inFlight.checkIn.has(actionKey)) {
+        return;
+    }
+
+    inFlight.checkIn.add(actionKey);
+    if (ui.disputeIssueTokenBtn) {
+        ui.disputeIssueTokenBtn.disabled = true;
+    }
+    showBackdrop();
+
+    const screenshotRemark = selectedPaidMode === 'UPI'
+        ? ` | UPI Screenshot Shown: ${isUpiScreenshotShown ? 'Yes' : 'No'}`
+        : '';
+    const remarksWithMode = `[Paid via ${selectedPaidMode}${screenshotRemark}] ${remarks}`;
+
+    fetchJsonWithTimeout(`${API_URL}?action=checkInStudent&regRefNo=${rowNo}&status=dispute_token_issued&remarks=${encodeURIComponent(remarksWithMode)}&authToken=${authToken}`, {
+        timeoutMs: WRITE_TIMEOUT_MS,
+        retries: 0
+    })
+        .then((result) => {
+            const statusValue = (result.status || '').toLowerCase();
+            if (statusValue !== 'success') {
+                showModalMessage('Token issue failed. Please try again.', false);
+                return;
+            }
+
+            const responseData = result.data || {};
+            const tokenIssuedByTarget = document.getElementById(`token_issued${rowNo}`);
+            const paymentStatusTarget = document.getElementById(`paid${rowNo}`);
+            const actionBtn = document.getElementById(`checkInBtn${rowNo}`);
+
+            if (tokenIssuedByTarget) {
+                tokenIssuedByTarget.innerText = responseData.tokenIssuedBy || tokenIssuedByTarget.innerText || '-';
+            }
+
+            if (paymentStatusTarget && responseData.paymentStatus) {
+                paymentStatusTarget.innerText = responseData.paymentStatus;
+            }
+
+            if (actionBtn) {
+                actionBtn.disabled = true;
+                actionBtn.innerText = 'Check-In Completed';
+            }
+
+            const card = actionBtn ? actionBtn.closest('.card-body') : null;
+            if (card) {
+                const selectedModeInput = card.querySelector(`input[name="paymentMode${rowNo}"]:checked`);
+                if (selectedModeInput) {
+                    selectedModeInput.disabled = true;
+                }
+                const unselectedModeInputs = card.querySelectorAll(`input[name="paymentMode${rowNo}"]:not(:checked)`);
+                unselectedModeInputs.forEach((input) => {
+                    input.disabled = true;
+                });
+            }
+
+            requestCache.search.clear();
+            requestCache.report = { data: null, updatedAt: 0 };
+            requestCache.summary = { data: null, updatedAt: 0 };
+
+            const modal = getDisputeModal();
+            if (modal) {
+                modal.hide();
+            }
+            showModalMessage('Token issued with dispute remarks.', true);
+        })
+        .catch(() => {
+            showModalMessage('Error while issuing token for dispute.', false);
+        })
+        .finally(() => {
+            inFlight.checkIn.delete(actionKey);
+            if (ui.disputeIssueTokenBtn) {
+                ui.disputeIssueTokenBtn.disabled = false;
+            }
+            hideBackdrop();
+        });
 }
 
 function showBackdrop() {
@@ -559,6 +747,8 @@ function displayStudentDetails(details) {
             const isTokenIssued = normalizedTokenStatus === 'YES';
             const paymentStatusText = isPaymentReceived ? 'PAID' : (paymentStatus || 'Not Paid');
             const paymentStatusClass = isPaymentReceived ? 'status-paid' : 'status-pending';
+            const paymentStatusClickAttr = isPaymentReceived ? '' : `onclick="openPaymentDisputeDialog('${detail.rowNo}')"`;
+            const paymentStatusActionClass = isPaymentReceived ? '' : 'status-chip-action';
             const paymentModeValue = (detail.paymentMode || '').trim().toUpperCase();
             const busRequired = normalizeBusRequired(detail.busRequired);
             const foodPreference = detail.foodPreference || '';
@@ -585,7 +775,7 @@ function displayStudentDetails(details) {
                             </div>
                         </div>
                         <div class="search-result-status">
-                            <span class="status-chip ${paymentStatusClass}" id="paid${detail.rowNo}">${paymentStatusText}</span>
+                            <span class="status-chip ${paymentStatusClass} ${paymentStatusActionClass}" id="paid${detail.rowNo}" ${paymentStatusClickAttr}>${paymentStatusText}</span>
                             <span class="status-caption">Payment status</span>
                         </div>
                     </div>
@@ -645,6 +835,7 @@ function displayStudentDetails(details) {
 
                     <div class="search-result-actions">
                         <button class="btn btn-primary"
+                                        id="checkInBtn${detail.rowNo}"
                                         onclick="checkIn('${detail.rowNo}', 'complete_checkin')"
                                         ${isTokenIssued ? "disabled" : ""}>${actionLabel}</button>
                     </div>
@@ -842,6 +1033,13 @@ window.addEventListener("load", (event) => {
                 fetchStudentDetails();
             }
         });
+    }
+
+    if (ui.disputePaidModeUpi) {
+        ui.disputePaidModeUpi.addEventListener('change', toggleUpiScreenshotProofVisibility);
+    }
+    if (ui.disputePaidModeCash) {
+        ui.disputePaidModeCash.addEventListener('change', toggleUpiScreenshotProofVisibility);
     }
 
     login();

@@ -28,6 +28,7 @@ const COL = Object.freeze({
   PAYMENT_RECEIVED_BY: 15,
   TOKEN_STATUS: 16,
   TOKEN_ISSUED_BY: 17,
+  REMARKS: 18,
 });
 
 // 1-based indexes for sheet.getRange(row, col).
@@ -39,6 +40,7 @@ const COL_NUM = Object.freeze({
   PAYMENT_RECEIVED_BY: COL.PAYMENT_RECEIVED_BY + 1,
   TOKEN_STATUS: COL.TOKEN_STATUS + 1,
   TOKEN_ISSUED_BY: COL.TOKEN_ISSUED_BY + 1,
+  REMARKS: COL.REMARKS + 1,
 });
 
 function isDebugModeEnabled() {
@@ -271,8 +273,9 @@ function doGet(e) {
     const regRefNo = parseInt(e.parameter.regRefNo);
     const checkInType = e.parameter.status;
     const paymentMode = e.parameter.paymentMode;
+    const remarks = e.parameter.remarks || "";
     response.status = 'success';
-    response.data = checkInStudent(regRefNo, checkInType, paymentMode, userDetails.email);
+    response.data = checkInStudent(regRefNo, checkInType, paymentMode, userDetails.email, remarks);
   } else if (action === 'listStudentDetails') {
     debugLog(userConfig[userDetails.email])
     response.status = 'success';
@@ -612,7 +615,7 @@ function testCheckInStudent(rowNo, checkInType, email) {
   checkInStudent(20, "paid", "UPI", "xyz@gmail.com");
 }
 
-function checkInStudent(rowNo, checkInType, paymentMode, email) {
+function checkInStudent(rowNo, checkInType, paymentMode, email, remarks) {
   const  sheetName = sheet_name
   const sheet = SpreadsheetApp.openById(sheet_id).getSheetByName(sheetName);
   const checkInTypes = {
@@ -634,6 +637,25 @@ function checkInStudent(rowNo, checkInType, paymentMode, email) {
   const currentPaymentStatus = String(rowValues[COL.PAYMENT_STATUS] || "").trim().toUpperCase();
   const currentTokenStatus = String(rowValues[COL.TOKEN_STATUS] || "").trim().toUpperCase();
   debugLog(regRefNo)
+
+  if (checkInType === 'dispute_token_issued') {
+    if (currentTokenStatus !== 'YES') {
+      sheet.getRange(rowIndex, COL_NUM.TOKEN_STATUS, 1, 2).setValues([['YES', email]]);
+    }
+
+    sheet.getRange(rowIndex, COL_NUM.REMARKS).setValue(String(remarks || '').trim());
+
+    return {
+      status: 'Success',
+      regRefNo: regRefNo,
+      paymentStatus: currentPaymentStatus,
+      paymentReceivedBy: rowValues[COL.PAYMENT_RECEIVED_BY],
+      tokenStatus: 'YES',
+      tokenIssuedBy: currentTokenStatus === 'YES' ? rowValues[COL.TOKEN_ISSUED_BY] : email,
+      paymentMode: rowValues[COL.PAYMENT_MODE] || '',
+      remarks: String(remarks || '').trim(),
+    };
+  }
 
   if (checkInType === 'complete_checkin') {
     if (currentPaymentStatus !== 'PAID') {

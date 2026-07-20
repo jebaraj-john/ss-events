@@ -196,6 +196,10 @@
       letter-spacing: 0.03em;
     }
 
+    .status-chip-action {
+      cursor: pointer;
+    }
+
     .status-paid {
       background: #dff3e4;
       color: #18603a;
@@ -747,6 +751,54 @@
             <div class="modal-footer">
 
               <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="disputeModal" tabindex="-1" aria-labelledby="disputeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="disputeModalLabel">Payment Dispute</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" id="disputeRowNo">
+
+              <div id="disputeStepQuestion">
+                <p class="mb-3">Do you find any payment dispute?</p>
+                <div class="d-flex gap-2">
+                  <button type="button" class="btn btn-primary" onclick="handleDisputeAnswer(true)">Yes</button>
+                  <button type="button" class="btn btn-outline-secondary" onclick="handleDisputeAnswer(false)">No</button>
+                </div>
+              </div>
+
+              <div id="disputeStepDetails" style="display:none;">
+                <label class="form-label">Payment Mode (they paid)</label>
+                <div class="d-flex gap-3 mb-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="disputePaidMode" id="disputePaidModeUPI" value="UPI">
+                    <label class="form-check-label" for="disputePaidModeUPI">UPI</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="disputePaidMode" id="disputePaidModeCASH" value="CASH">
+                    <label class="form-check-label" for="disputePaidModeCASH">Cash</label>
+                  </div>
+                </div>
+
+                <div class="form-check mb-3" id="upiScreenshotProofGroup" style="display:none;">
+                  <input class="form-check-input" type="checkbox" id="upiScreenshotProof">
+                  <label class="form-check-label" for="upiScreenshotProof">For UPI payments, the user has shown the payment screenshot.</label>
+                </div>
+
+                <label for="disputeRemarks" class="form-label">If the user has already paid, please enter the reason/details in remarks.</label>
+                <textarea id="disputeRemarks" class="form-control" rows="4" placeholder="Enter payment dispute reason"></textarea>
+              </div>
+            </div>
+            <div class="modal-footer" id="disputeModalFooter">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+              <button type="button" class="btn btn-primary" id="disputeIssueTokenBtn" style="display:none;" onclick="issueTokenForDispute()">Issue Token</button>
             </div>
           </div>
         </div>
