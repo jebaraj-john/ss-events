@@ -1,58 +1,252 @@
+const API_URL = "https://script.google.com/macros/s/AKfycbzXCQcCXIxhDG3vOhAiUGC-ltfJ8sfwo-_QSXuLuA9yQkp6H3JA1Kc4aL1sTPlE_wEk4A/exec";
+
+const READ_TIMEOUT_MS = 15000;
+const WRITE_TIMEOUT_MS = 20000;
+const CACHE_TTL_MS = 60000;
+
+const requestCache = {
+    summary: { data: null, updatedAt: 0 },
+    report: { data: null, updatedAt: 0 },
+    search: new Map()
+};
+
+const inFlight = {
+    summary: false,
+    report: false,
+    searchController: null,
+    checkIn: new Set()
+};
+
+const ui = {};
+let checkInModalInstance = null;
+let backdropRequestCount = 0;
+
+function initUiRefs() {
+    ui.backdrop = document.getElementById('backdrop');
+    ui.accessTokenField = document.querySelector('#accessToken');
+    ui.checkInModal = document.getElementById('checkInModal');
+    ui.checkInModalMessage = document.getElementById('checkInModalMessage');
+    ui.searchInput = document.getElementById('searchInput');
+    ui.searchBtn = document.getElementById('searchBtn');
+    ui.details = document.getElementById('details');
+    ui.reportTable = document.getElementById('reportTable');
+    ui.reportUpdatedAt = document.getElementById('reportUpdatedAt');
+    ui.summaryUpdatedAt = document.getElementById('summaryUpdatedAt');
+    ui.reportStatus = document.getElementById('reportStatus');
+    ui.summaryStatus = document.getElementById('summaryStatus');
+}
+
+function getCheckInModal() {
+    if (!checkInModalInstance && ui.checkInModal) {
+        checkInModalInstance = new bootstrap.Modal(ui.checkInModal);
+    }
+    return checkInModalInstance;
+}
+
+function showModalMessage(message, isSuccess) {
+    ui.checkInModalMessage.innerText = message;
+    ui.checkInModalMessage.className = isSuccess ? 'text-success' : 'text-danger';
+    const modal = getCheckInModal();
+    if (modal) {
+        modal.show();
+    }
+}
+
+function showBackdrop() {
+    backdropRequestCount += 1;
+    if (ui.backdrop) {
+        ui.backdrop.style.display = 'flex';
+    }
+}
+
+function hideBackdrop() {
+    backdropRequestCount = Math.max(0, backdropRequestCount - 1);
+    if (backdropRequestCount === 0 && ui.backdrop) {
+        ui.backdrop.style.display = 'none';
+    }
+}
+
+function isCacheFresh(updatedAt) {
+    return updatedAt > 0 && (Date.now() - updatedAt) <= CACHE_TTL_MS;
+}
+
+function formatTime(timestamp) {
+    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function setUpdatedAt(type, updatedAt) {
+    const label = `Last updated: ${formatTime(updatedAt)}`;
+    if (type === 'summary' && ui.summaryUpdatedAt) {
+        ui.summaryUpdatedAt.innerText = label;
+    }
+    if (type === 'report' && ui.reportUpdatedAt) {
+        ui.reportUpdatedAt.innerText = label;
+    }
+}
+
+function setStatusMessage(type, message, className) {
+    const target = type === 'summary' ? ui.summaryStatus : ui.reportStatus;
+    if (!target) {
+        return;
+    }
+    target.innerText = message || '';
+    target.className = className || '';
+}
+
+function setSearchLoading(isLoading) {
+    if (!ui.searchBtn) {
+        return;
+    }
+    ui.searchBtn.disabled = isLoading;
+    ui.searchBtn.innerText = isLoading ? 'Searching...' : 'Search';
+}
+
+function appendDetailsMessage(message, className) {
+    ui.details.innerHTML = `<p class="${className}">${message}</p>`;
+}
+
+async function fetchJsonWithTimeout(url, options = {}) {
+    const { timeoutMs = READ_TIMEOUT_MS, retries = 0, signal } = options;
+    let attempt = 0;
+
+    while (attempt <= retries) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+        let abortHandler = null;
+
+        if (signal) {
+            abortHandler = () => controller.abort();
+            signal.addEventListener('abort', abortHandler);
+        }
+
+        try {
+            const response = await fetch(url, { signal: controller.signal });
+            return await response.json();
+        } catch (error) {
+            const isLastAttempt = attempt >= retries;
+            if (isLastAttempt) {
+                throw error;
+            }
+        } finally {
+            clearTimeout(timeoutId);
+            if (signal && abortHandler) {
+                signal.removeEventListener('abort', abortHandler);
+            }
+        }
+
+        attempt += 1;
+    }
+}
+
+function renderSummaryCards(data) {
+    document.getElementById('totalUPI').innerText = `\u20B9${data.totalUPI || 0}`;
+    document.getElementById('totalCash').innerText = `\u20B9${data.totalCash || 0}`;
+    document.getElementById('totalAmount').innerText = `\u20B9${data.totalAmount || 0}`;
+}
+
 // Fetch and display payment summary
-function checkedInSummary() {
-    document.getElementById('backdrop').style.display = 'flex';
-    const accessTokenField = document.querySelector("#accessToken");
-    if (accessTokenField.value == "") {
-        document.getElementById('backdrop').style.display = 'none';
+async function checkedInSummary(forceRefresh = false) {
+    const authToken = (ui.accessTokenField && ui.accessTokenField.value) || '';
+    if (!authToken || inFlight.summary) {
         return;
     }
 
-    fetch(`${API_URL}?action=checkedInSummary&authToken=${accessTokenField.value}`)
-        .then(response => response.json())
-        .then(result => {
-            document.getElementById('backdrop').style.display = 'none';
-            if (result.status && result.status.toLowerCase() === 'success') {
-                // Update the summary cards with the data
-                document.getElementById('totalUPI').innerText = `\u20B9${result.data.totalUPI || 0}`;
-                document.getElementById('totalCash').innerText = `\u20B9${result.data.totalCash || 0}`;
-                document.getElementById('totalAmount').innerText = `\u20B9${result.data.totalAmount || 0}`;
-            } else {
-                const messageElement = document.getElementById('checkInModalMessage');
-                messageElement.innerText = result.message || 'Failed to load summary data.';
-                messageElement.className = 'text-danger';
-                const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
-                modal.show();
-            }
-        })
-        .catch((error) => {
-            console.log(error);
-            document.getElementById('backdrop').style.display = 'none';
-            const messageElement = document.getElementById('checkInModalMessage');
-            messageElement.innerText = 'Error retrieving summary data';
-            messageElement.className = 'text-danger';
-            const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
-            modal.show();
+    const cached = requestCache.summary;
+    if (!forceRefresh && cached.data) {
+        renderSummaryCards(cached.data);
+        setUpdatedAt('summary', cached.updatedAt);
+        if (isCacheFresh(cached.updatedAt)) {
+            setStatusMessage('summary', 'Showing recent data', 'small text-muted');
+            return;
+        }
+        setStatusMessage('summary', 'Refreshing summary...', 'small text-muted');
+    }
+
+    inFlight.summary = true;
+    showBackdrop();
+
+    try {
+        const result = await fetchJsonWithTimeout(`${API_URL}?action=checkedInSummary&authToken=${authToken}`, {
+            timeoutMs: READ_TIMEOUT_MS,
+            retries: 1
         });
+        const status = (result.status || '').toLowerCase();
+        if (status === 'success') {
+            const updatedAt = Date.now();
+            requestCache.summary = { data: result.data || {}, updatedAt };
+            renderSummaryCards(result.data || {});
+            setUpdatedAt('summary', updatedAt);
+            setStatusMessage('summary', 'Data updated', 'small text-success');
+        } else {
+            setStatusMessage('summary', '', '');
+            showModalMessage(result.message || 'Failed to load summary data.', false);
+        }
+    } catch (error) {
+        console.log(error);
+        if (cached.data) {
+            renderSummaryCards(cached.data);
+            setStatusMessage('summary', 'Could not refresh. Showing last available data.', 'small text-warning');
+        } else {
+            setStatusMessage('summary', '', '');
+            showModalMessage('Error retrieving summary data', false);
+        }
+    } finally {
+        inFlight.summary = false;
+        hideBackdrop();
+    }
 }
 
 // List all students for the Report tab
-function listStudents() {
-    document.getElementById('backdrop').style.display = 'flex';
-    const accessTokenField = document.querySelector("#accessToken");
-    fetch(`${API_URL}?action=listStudentDetails&authToken=${accessTokenField.value}`)
-        .then(response => response.json())
-        .then(result => {
-            document.getElementById('backdrop').style.display = 'none';
-            if (result.status && result.status.toLowerCase() === 'success') {
-                listStudentDetails(result.data);
-            } else {
-                document.getElementById('reportTable').innerHTML = `<p class='text-danger'>${result.message || 'Failed to load data.'}</p>`;
-            }
-        })
-        .catch(() => {
-            document.getElementById('backdrop').style.display = 'none';
-            document.getElementById('reportTable').innerHTML = `<p class='text-danger'>Error retrieving data</p>`;
+async function listStudents(forceRefresh = false) {
+    const authToken = (ui.accessTokenField && ui.accessTokenField.value) || '';
+    if (!authToken || inFlight.report) {
+        return;
+    }
+
+    const cached = requestCache.report;
+    if (!forceRefresh && cached.data) {
+        listStudentDetails(cached.data);
+        setUpdatedAt('report', cached.updatedAt);
+        if (isCacheFresh(cached.updatedAt)) {
+            setStatusMessage('report', 'Showing recent data', 'small text-muted');
+            return;
+        }
+        setStatusMessage('report', 'Refreshing report...', 'small text-muted');
+    }
+
+    inFlight.report = true;
+    showBackdrop();
+
+    try {
+        const result = await fetchJsonWithTimeout(`${API_URL}?action=listStudentDetails&authToken=${authToken}`, {
+            timeoutMs: READ_TIMEOUT_MS,
+            retries: 1
         });
+        const status = (result.status || '').toLowerCase();
+        if (status === 'success') {
+            const updatedAt = Date.now();
+            const data = Array.isArray(result.data) ? result.data : [];
+            requestCache.report = { data, updatedAt };
+            listStudentDetails(data);
+            setUpdatedAt('report', updatedAt);
+            setStatusMessage('report', 'Data updated', 'small text-success');
+        } else {
+            ui.reportTable.innerHTML = `<p class='text-danger'>${result.message || 'Failed to load data.'}</p>`;
+            setStatusMessage('report', '', '');
+        }
+    } catch (error) {
+        console.log(error);
+        if (cached.data) {
+            listStudentDetails(cached.data);
+            setStatusMessage('report', 'Could not refresh. Showing last available data.', 'small text-warning');
+        } else {
+            ui.reportTable.innerHTML = `<p class='text-danger'>Error retrieving data</p>`;
+            setStatusMessage('report', '', '');
+        }
+    } finally {
+        inFlight.report = false;
+        hideBackdrop();
+    }
 }
 
 // Render student list as a table in the Report tab
@@ -92,7 +286,7 @@ function listStudentDetails(details) {
             <td>${detail.name || ''}</td>
             <td>${detail.regRefNo || ''}</td>
             <td>${detail.role || ''}</td>
-            <td>${detail.paymentMode || ''}</td>
+            <td>${detail.reg_amount || ''}</td>
             <td>${detail.center || ''}</td>
             <td>${detail.service || ''}</td>
             <td>${detail.department || ''}</td>
@@ -100,7 +294,7 @@ function listStudentDetails(details) {
             <td>${detail.busRequired || ''}</td>
             <td>${detail.foodPreference || ''}</td>
             <td>${detail.paymentStatus || ''}</td>
-            <td>${detail.tokenStatus || ''}</td>
+            <td>${detail.paymentReceivedBy || ''}</td>
         </tr>`;
     });
     table += '</tbody></table></div>';
@@ -120,7 +314,8 @@ function listStudentDetails(details) {
                 }
             }
         ],
-        pageLength: 100,
+        deferRender: true,
+        pageLength: 50,
         order: [[2, 'asc']], // Sort by Name column by default
         search: {
             return: true
@@ -130,7 +325,6 @@ function listStudentDetails(details) {
         }
     });
 }
-const API_URL = "https://script.google.com/macros/s/AKfycbzXCQcCXIxhDG3vOhAiUGC-ltfJ8sfwo-_QSXuLuA9yQkp6H3JA1Kc4aL1sTPlE_wEk4A/exec";
 
 function toggleKeyboardType() {
     const input = document.getElementById('searchInput');
@@ -150,45 +344,66 @@ function setInputType(type) {
 }
 
 function fetchStudentDetails() {
-    let input = document.getElementById('searchInput').value;
+    const input = (ui.searchInput && ui.searchInput.value ? ui.searchInput.value : '').trim();
+    const authToken = (ui.accessTokenField && ui.accessTokenField.value) || '';
 
+    if (!input) {
+        appendDetailsMessage('Please enter a value to search.', 'text-danger mt-3');
+        return;
+    }
 
+    if (!authToken) {
+        appendDetailsMessage('Authentication not ready. Please wait and try again.', 'text-danger mt-3');
+        return;
+    }
 
+    const cacheKey = `${ui.searchInput.type}:${input.toLowerCase()}`;
+    const cached = requestCache.search.get(cacheKey);
+    if (cached && isCacheFresh(cached.updatedAt)) {
+        displayStudentDetails(cached.data);
+        return;
+    }
 
-    document.getElementById('backdrop').style.display = 'flex';
-    const accessTokenField = document.querySelector("#accessToken");
-    // displayStudentDetails([ { name: 'Ashnika Angel K',
-    //     regRefNo: 'VBSNC0005',
-    //     gender: 'Female',
-    //     paymentMode: 'Cash (Kindly make the Registration Fee Rs 50 at the Sunday School Registration Counter at the respective Centers)',
-    //     department: 'Inter (VIII & IX)',
-    //     mobileNumber: 7200007648,
-    //     bookRequired: 'English' } ]);
-    fetch(`${API_URL}?action=getStudentDetails&input=${input}&authToken=${accessTokenField.value}`)
-        .then(response => response.json())
+    if (inFlight.searchController) {
+        inFlight.searchController.abort();
+    }
+
+    const searchController = new AbortController();
+    inFlight.searchController = searchController;
+
+    setSearchLoading(true);
+    appendDetailsMessage('Searching...', 'text-muted mt-3');
+
+    fetchJsonWithTimeout(`${API_URL}?action=getStudentDetails&input=${input}&authToken=${authToken}`, {
+        timeoutMs: READ_TIMEOUT_MS,
+        retries: 1,
+        signal: searchController.signal
+    })
         .then(result => {
-            document.getElementById('backdrop').style.display = 'none';
-            if (result.status.toLowerCase() === 'success') {
-                displayStudentDetails(result.data);
+            const status = (result.status || '').toLowerCase();
+            if (status === 'success') {
+                const data = Array.isArray(result.data) ? result.data : [];
+                requestCache.search.set(cacheKey, { data, updatedAt: Date.now() });
+                displayStudentDetails(data);
             } else {
-                const messageElement = document.getElementById('checkInModalMessage');
-                messageElement.innerText = result.message;
-                messageElement.className = 'text-danger';
-                const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
-                modal.show();
+                showModalMessage(result.message || 'No data found.', false);
+                appendDetailsMessage(result.message || 'No records found.', 'text-danger mt-3');
             }
-
         })
         .catch((error) => {
-            console.log(error)
-            document.getElementById('backdrop').style.display = 'none';
-            const messageElement = document.getElementById('checkInModalMessage');
-            messageElement.innerText = 'Error retrieving data';
-            messageElement.className = 'text-danger';
-            const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
-            modal.show();
+            if (error && error.name === 'AbortError') {
+                return;
+            }
+            console.log(error);
+            showModalMessage('Error retrieving data', false);
+            appendDetailsMessage('Error retrieving data', 'text-danger mt-3');
+        })
+        .finally(() => {
+            if (inFlight.searchController === searchController) {
+                inFlight.searchController = null;
+            }
+            setSearchLoading(false);
         });
-
 }
 
 // store payment status per regRefNo
@@ -200,6 +415,11 @@ function displayStudentDetails(details) {
         details.forEach(detail => {
             // use detail.paymentStatus if available, else ""
             const paymentStatus = detail.paymentStatus || "";
+            const paymentModeValue = (detail.paymentMode || '').toUpperCase();
+            const foodPreference = detail.foodPreference || '';
+            const paymentReceivedBy = detail.paymentReceivedBy || '';
+            const tokenIssuedBy = detail.tokenIssuedBy || '';
+            const regAmount = detail.reg_amount || '';
 
             // initialize map
             paymentStatusMap[detail.rowNo] = paymentStatus;
@@ -214,8 +434,9 @@ function displayStudentDetails(details) {
                 <p><strong>Department:</strong> ${detail.department}</p>
                 <p><strong>MobileNumber:</strong> ${detail.mobileNumber}</p>
                 <p><strong>Bus Required:</strong> ${detail.busRequired}</p>
-                <p class="${detail.foodPreference.toString().toLowerCase()}">
-                    <strong>Food Preference:</strong> ${detail.foodPreference}
+                <p><strong>Reg Amount:</strong> ${regAmount}</p>
+                <p class="${foodPreference.toString().toLowerCase()}">
+                    <strong>Food Preference:</strong> ${foodPreference}
                 </p>
 
                 <p>
@@ -224,14 +445,16 @@ function displayStudentDetails(details) {
                            name="paymentMode${detail.rowNo}"
                            onchange="updatePaymentStatus('${detail.rowNo}', this.value)"
                            value="UPI"
-                           ${paymentStatus === "UPI" ? "checked" : ""}>
+                              ${paymentModeValue !== "" ? "disabled" : ""}
+                              ${paymentModeValue === "UPI" ? "checked" : ""}>
                     <label for="paymentMode${detail.rowNo}UPI">UPI</label>
 
                     <input type="radio"
                            name="paymentMode${detail.rowNo}"
                            onchange="updatePaymentStatus('${detail.rowNo}', this.value)"
                            value="CASH"
-                           ${paymentStatus === "CASH" ? "checked" : ""}>
+                              ${paymentModeValue !== "" ? "disabled" : ""}
+                              ${paymentModeValue === "CASH" ? "checked" : ""}>
                     <label for="paymentMode${detail.rowNo}CASH">CASH</label>
                 </p>
 
@@ -243,11 +466,11 @@ function displayStudentDetails(details) {
                 </p>
                 <p>
                     Payment Received By:
-                    <span id="payment_received_by${detail.rowNo}">${detail.paymentReceivedBy}</span>
+                    <span id="payment_received_by${detail.rowNo}">${paymentReceivedBy}</span>
                 </p>
                 <p>
                     Token Issued By:
-                    <span id="token_issued${detail.rowNo}">${detail.tokenIssuedBy}</span>
+                    <span id="token_issued${detail.rowNo}">${tokenIssuedBy}</span>
                 </p>
 
                 <button class="btn btn-primary"
@@ -279,7 +502,14 @@ function updatePaymentStatus(regRefNo, value) {
 // checkIn with validation
 function checkIn(regRefNo, status) {
     const paymentMode = paymentStatusMap[regRefNo] || "";
-    let issueTokenBtn = document.getElementById(`${status}${regRefNo}`).parentElement.parentElement.querySelector('.issue-token-btn');
+    const actionKey = `${regRefNo}:${status}`;
+    if (inFlight.checkIn.has(actionKey)) {
+        return;
+    }
+
+    const clickedButton = (window.event && window.event.currentTarget) ? window.event.currentTarget : null;
+    const card = clickedButton ? clickedButton.closest('.card-body') : null;
+    const issueTokenBtn = card ? card.querySelector('.issue-token-btn') : null;
 
 
     if (!paymentMode) {
@@ -287,42 +517,48 @@ function checkIn(regRefNo, status) {
         return;
     }
 
-    document.getElementById('backdrop').style.display = 'flex';
+    inFlight.checkIn.add(actionKey);
+    if (clickedButton) {
+        clickedButton.disabled = true;
+    }
+
+    showBackdrop();
     let statusTextMap = {
         'paid': 'Payment Received',
         'token_issued': 'Token Issued',
     };
-    const accessTokenField = document.querySelector("#accessToken");
+    const authToken = (ui.accessTokenField && ui.accessTokenField.value) || '';
 
-    fetch(`${API_URL}?action=checkInStudent&regRefNo=${regRefNo}&status=${status}&paymentMode=${paymentMode}&authToken=${accessTokenField.value}`)
-        .then(response => response.json())
+    fetchJsonWithTimeout(`${API_URL}?action=checkInStudent&regRefNo=${regRefNo}&status=${status}&paymentMode=${paymentMode}&authToken=${authToken}`, {
+        timeoutMs: WRITE_TIMEOUT_MS,
+        retries: 0
+    })
         .then(result => {
-            document.getElementById('backdrop').style.display = 'none';
+            const statusValue = (result.status || '').toLowerCase();
+            const statusTargetId = status === 'paid' ? `paid${regRefNo}` : `token_issued${regRefNo}`;
 
-            const messageElement = document.getElementById('checkInModalMessage');
-            const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
-
-            if (result.status.toLowerCase() === 'success') {
-                document.getElementById(`${status}${regRefNo}`).innerText = 'YES';
-                messageElement.innerText = `${statusTextMap[status]} successful!`;
-                messageElement.className = 'text-success';
-                if (status === 'paid') {
-                    issueTokenBtn.disabled = paymentMode === "";
+            if (statusValue === 'success') {
+                const statusTarget = document.getElementById(statusTargetId);
+                if (statusTarget) {
+                    statusTarget.innerText = 'YES';
+                }
+                showModalMessage(`${statusTextMap[status]} successful!`, true);
+                if (status === 'paid' && issueTokenBtn) {
+                    issueTokenBtn.disabled = false;
                 }
             } else {
-                messageElement.innerText = `${statusTextMap[status]} failed. Please try again.`;
-                messageElement.className = 'text-danger';
+                showModalMessage(`${statusTextMap[status]} failed. Please try again.`, false);
             }
-
-            modal.show();
         })
         .catch(() => {
-            document.getElementById('backdrop').style.display = 'none';
-            const messageElement = document.getElementById('checkInModalMessage');
-            messageElement.innerText = `Error during ${statusTextMap[status]}. Please try again.`;
-            messageElement.className = 'text-danger';
-            const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
-            modal.show();
+            showModalMessage(`Error during ${statusTextMap[status]}. Please try again.`, false);
+        })
+        .finally(() => {
+            inFlight.checkIn.delete(actionKey);
+            if (clickedButton) {
+                clickedButton.disabled = false;
+            }
+            hideBackdrop();
         });
 }
 
@@ -403,5 +639,15 @@ function login() {
 
 window.addEventListener("load", (event) => {
     console.log("page is fully loaded");
+    initUiRefs();
+
+    if (ui.searchInput) {
+        ui.searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                fetchStudentDetails();
+            }
+        });
+    }
+
     login();
 });
