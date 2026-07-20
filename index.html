@@ -46,9 +46,51 @@
       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
       .header {
         display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        flex-wrap: nowrap;
       }
+
+      .header-left {
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+
       .header-title {
-        flex-grow: 2;
+        flex-grow: 1;
+        margin: 0;
+        line-height: 1.1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: clamp(1rem, 3.5vw, 1.8rem);
+      }
+
+      .header-right {
+        flex: 0 0 auto;
+        gap: 0.35rem;
+        flex-wrap: nowrap;
+      }
+
+      #profile {
+        gap: 0.35rem;
+        min-width: 0;
+      }
+
+      #profile p {
+        margin: 0;
+        max-width: 110px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.85rem;
+      }
+
+      #logout {
+        padding: 0.25rem 0.55rem;
+        font-size: 0.85rem;
+        white-space: nowrap;
       }
       .input-group {
       position: relative;
@@ -492,6 +534,28 @@
     }
 
     @media (max-width: 576px) {
+      .header {
+        padding: 0.55rem 0.7rem !important;
+      }
+
+      .header-title {
+        font-size: 0.95rem;
+      }
+
+      #profile img {
+        width: 30px !important;
+        height: 30px !important;
+      }
+
+      #profile p {
+        display: none;
+      }
+
+      #logout {
+        padding: 0.22rem 0.45rem;
+        font-size: 0.78rem;
+      }
+
       .report-table-shell {
         border-radius: 14px;
       }
@@ -508,16 +572,103 @@
       }
 
       .search-result-top {
-        flex-direction: column;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 0.6rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .search-result-top > div:first-child {
+        min-width: 0;
+        flex: 1 1 auto;
       }
 
       .search-result-status {
-        align-items: flex-start;
+        align-items: flex-end;
+        min-width: 82px;
       }
 
-      .search-result-actions .btn,
+      .search-result-card .card-body {
+        padding: 0.8rem;
+      }
+
+      .search-result-role {
+        font-size: 0.68rem;
+        margin-bottom: 0.25rem;
+      }
+
+      .search-result-name {
+        font-size: 1rem;
+        margin-bottom: 0.35rem !important;
+      }
+
+      .search-result-pills {
+        flex-wrap: nowrap;
+        overflow-x: visible;
+        gap: 0.35rem;
+        padding-bottom: 0.1rem;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .result-pill {
+        font-size: 0.72rem;
+        padding: 0.28rem 0.55rem;
+        white-space: nowrap;
+      }
+
+      .status-chip {
+        min-width: 72px;
+        padding: 0.32rem 0.5rem;
+        font-size: 0.68rem;
+      }
+
+      .status-caption {
+        margin-top: 0.25rem;
+        font-size: 0.64rem;
+      }
+
+      .search-result-grid {
+        gap: 0.45rem;
+        margin-bottom: 0.8rem;
+      }
+
+      .detail-item {
+        padding: 0.55rem 0.65rem;
+      }
+
+      .detail-label {
+        font-size: 0.66rem;
+        margin-bottom: 0.15rem;
+      }
+
+      .detail-value {
+        font-size: 0.8rem;
+        line-height: 1.2;
+      }
+
+      .payment-mode-panel {
+        padding: 0.7rem 0.75rem;
+        margin-bottom: 0.8rem;
+      }
+
+      .payment-choice-group {
+        flex-wrap: nowrap;
+        gap: 0.45rem;
+      }
+
       .payment-choice {
+        flex: 1 1 0;
+        min-width: 0;
+        width: auto;
+        padding: 0.45rem 0.55rem;
+        font-size: 0.78rem;
+      }
+
+      .search-result-actions .btn {
         width: 100%;
+        min-width: 0;
+        padding: 0.45rem 0.7rem;
+        font-size: 0.85rem;
       }
 
       .detail-inline-pair {
@@ -540,6 +691,31 @@
   </head>
   <body>
     <div class="container">
+
+      <div class="header d-flex align-items-center justify-content-between bg-light shadow-sm p-3">
+        <!-- Left Section -->
+        <div class="header-left">
+          <h1 class="header-title m-0">Kids Retreat  2026 Check-In</h1>
+        </div>
+
+        <!-- Right Section -->
+        <div class="header-right d-flex align-items-center">
+          <!-- User Profile -->
+          <div id="profile" class="d-flex align-items-center me-3">
+
+          </div>
+
+          <!-- Logout Button -->
+          <button id="logout" type="button" class="btn btn-outline-secondary d-flex align-items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                 class="bi bi-box-arrow-right me-2" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0z"></path>
+              <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"></path>
+            </svg>
+            Log Out
+          </button>
+        </div>
+      </div>
       <!-- Tabs -->
       <ul class="nav nav-tabs mt-3" id="mainTabs" role="tablist">
         <li class="nav-item" role="presentation">
@@ -576,30 +752,6 @@
         </div>
       </div>
 
-      <div class="header d-flex align-items-center justify-content-between bg-light shadow-sm p-3">
-        <!-- Left Section -->
-        <div class="header-left">
-          <h1 class="header-title m-0">Kids Retreat  2026 Check-In</h1>
-        </div>
-
-        <!-- Right Section -->
-        <div class="header-right d-flex align-items-center">
-          <!-- User Profile -->
-          <div id="profile" class="d-flex align-items-center me-3">
-
-          </div>
-
-          <!-- Logout Button -->
-          <button id="logout" type="button" class="btn btn-outline-secondary d-flex align-items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                 class="bi bi-box-arrow-right me-2" viewBox="0 0 16 16">
-              <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0z"></path>
-              <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"></path>
-            </svg>
-            Log Out
-          </button>
-        </div>
-      </div>
 
 
 
