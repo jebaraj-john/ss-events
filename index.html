@@ -295,6 +295,102 @@
       font-weight: 600;
     }
 
+    .report-table-shell {
+      position: relative;
+      border: 1px solid #e5eaf2;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #ffffff;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .report-table-shell::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 28px;
+      height: 100%;
+      pointer-events: none;
+      background: linear-gradient(270deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
+    }
+
+    .report-table-scroll {
+      position: relative;
+    }
+
+    .report-student-table {
+      margin-bottom: 0;
+    }
+
+    .report-student-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #ecf3ff;
+      color: #17325c;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      border-bottom: 1px solid #d6e2f7;
+      white-space: nowrap;
+    }
+
+    .report-student-table tbody td {
+      vertical-align: middle;
+      border-color: #eef2f7;
+      font-size: 0.92rem;
+    }
+
+    .report-student-table thead th:nth-child(2),
+    .report-student-table tbody td:nth-child(2) {
+      min-width: 180px;
+      width: 180px;
+      white-space: nowrap;
+    }
+
+    .report-student-table.table-striped > tbody > tr:nth-of-type(odd) {
+      --bs-table-accent-bg: #fbfcff;
+    }
+
+    .report-student-table tbody tr:hover {
+      --bs-table-accent-bg: #f4f8ff;
+    }
+
+    .report-status-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 92px;
+      padding: 0.35rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .report-status-paid {
+      background: #dff3e4;
+      color: #18603a;
+    }
+
+    .report-status-pending {
+      background: #fff0d8;
+      color: #8a4b08;
+    }
+
+    .report-user-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.32rem 0.7rem;
+      border-radius: 999px;
+      background: #eef3fb;
+      color: #314866;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
     .search-skeleton-card {
       overflow: hidden;
     }
@@ -396,6 +492,21 @@
     }
 
     @media (max-width: 576px) {
+      .report-table-shell {
+        border-radius: 14px;
+      }
+
+      .report-student-table thead th,
+      .report-student-table tbody td {
+        font-size: 0.84rem;
+      }
+
+      .report-student-table thead th:nth-child(2),
+      .report-student-table tbody td:nth-child(2) {
+        min-width: 180px;
+        width: 180px;
+      }
+
       .search-result-top {
         flex-direction: column;
       }

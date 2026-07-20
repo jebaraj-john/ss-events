@@ -74,6 +74,10 @@ function formatTime(timestamp) {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+function normalizeBusRequired(value) {
+    return (value || '').trim().split(/\s+/)[0] || '';
+}
+
 function setUpdatedAt(type, updatedAt) {
     const label = `Last updated: ${formatTime(updatedAt)}`;
     if (type === 'summary' && ui.summaryUpdatedAt) {
@@ -330,26 +334,33 @@ function listStudentDetails(details) {
         $('#studentTable').DataTable().destroy();
     }
 
-    let table = `<div class="table-responsive"><table id="studentTable" class="table table-bordered table-striped">
+    let table = `<div class="report-table-shell"><div class="table-responsive report-table-scroll"><table id="studentTable" class="table table-bordered table-striped report-student-table">
         <thead class="table-light">
             <tr>
                 <th>#</th>
                 <th>Name</th>
                 <th>Reg No</th>
                 <th>Role</th>
-                <th>Amount to be Paid</th>
+                <th>Amount</th>
                 <th>Center</th>
                 <th>Service</th>
                 <th>Department</th>
                 <th>Mobile Number</th>
                 <th>Bus Required</th>
-                <th>Food Preference</th>
+                <th>Food Prefer..</th>
                 <th>Payment Status</th>
                 <th>Payment Received By</th>
             </tr>
         </thead>
         <tbody>`;
     details.forEach((detail, idx) => {
+        const paymentStatus = (detail.paymentStatus || '').trim();
+        const paymentStatusText = paymentStatus || 'Not Paid';
+        const paymentStatusClass = paymentStatus.toUpperCase() === 'PAID' ? 'report-status-paid' : 'report-status-pending';
+        const paymentReceivedBy = detail.paymentReceivedBy || '-';
+        const service = (detail.service || '').replace("Service", "").replace("Not Applicable", "N/A") || '';
+        const department = (detail.department || '').replace("Not Applicable", "N/A") || '';
+        const busRequired = normalizeBusRequired(detail.busRequired);
         table += `<tr>
             <td>${idx + 1}</td>
             <td>${detail.name || ''}</td>
@@ -357,16 +368,16 @@ function listStudentDetails(details) {
             <td>${detail.role || ''}</td>
             <td>${detail.reg_amount || ''}</td>
             <td>${detail.center || ''}</td>
-            <td>${detail.service || ''}</td>
-            <td>${detail.department || ''}</td>
+            <td>${service}</td>
+            <td>${department}</td>
             <td>${detail.mobileNumber || ''}</td>
-            <td>${detail.busRequired || ''}</td>
+            <td>${busRequired}</td>
             <td>${detail.foodPreference || ''}</td>
-            <td>${detail.paymentStatus || ''}</td>
-            <td>${detail.paymentReceivedBy || ''}</td>
+            <td><span class="report-status-badge ${paymentStatusClass}">${paymentStatusText}</span></td>
+            <td><span class="report-user-pill">${paymentReceivedBy}</span></td>
         </tr>`;
     });
-    table += '</tbody></table></div>';
+    table += '</tbody></table></div></div>';
     document.getElementById('reportTable').innerHTML = table;
 
     // Initialize DataTable with search, pagination and CSV export
@@ -491,6 +502,7 @@ function displayStudentDetails(details) {
             const paymentStatusText = isPaymentReceived ? 'PAID' : (paymentStatus || 'Not Paid');
             const paymentStatusClass = isPaymentReceived ? 'status-paid' : 'status-pending';
             const paymentModeValue = (detail.paymentMode || '').trim().toUpperCase();
+            const busRequired = normalizeBusRequired(detail.busRequired);
             const foodPreference = detail.foodPreference || '';
             const paymentReceivedBy = detail.paymentReceivedBy || '';
             const tokenIssuedBy = detail.tokenIssuedBy || '';
@@ -527,7 +539,7 @@ function displayStudentDetails(details) {
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Bus Required</span>
-                            <span class="detail-value">${detail.busRequired || '-'}</span>
+                            <span class="detail-value">${busRequired || '-'}</span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Reg Amount</span>
