@@ -475,108 +475,111 @@ function fetchStudentDetails() {
         });
 }
 
-// store payment status per regRefNo
-let paymentStatusMap = {};
+// store selected or persisted payment mode per row
+let paymentModeMap = {};
 
 function displayStudentDetails(details) {
     let content = '';
     if (details.length > 0) {
         details.forEach(detail => {
             // use detail.paymentStatus if available, else ""
-            const paymentStatus = detail.paymentStatus || "";
-                        const paymentStatusText = paymentStatus || 'Not Paid';
-                        const paymentStatusClass = paymentStatus.toLowerCase() === 'paid' ? 'status-paid' : 'status-pending';
-            const paymentModeValue = (detail.paymentMode || '').toUpperCase();
+            const paymentStatus = (detail.paymentStatus || '').trim();
+            const normalizedPaymentStatus = paymentStatus.toUpperCase();
+            const isPaymentReceived = normalizedPaymentStatus === 'PAID' || normalizedPaymentStatus === 'YES';
+            const normalizedTokenStatus = (detail.tokenStatus || '').trim().toUpperCase();
+            const isTokenIssued = normalizedTokenStatus === 'YES';
+            const paymentStatusText = isPaymentReceived ? 'PAID' : (paymentStatus || 'Not Paid');
+            const paymentStatusClass = isPaymentReceived ? 'status-paid' : 'status-pending';
+            const paymentModeValue = (detail.paymentMode || '').trim().toUpperCase();
             const foodPreference = detail.foodPreference || '';
             const paymentReceivedBy = detail.paymentReceivedBy || '';
             const tokenIssuedBy = detail.tokenIssuedBy || '';
             const regAmount = detail.reg_amount || '';
             const foodPreferenceClass = foodPreference.toString().toLowerCase();
+            const actionLabel = isTokenIssued ? 'Check-In Completed' : (isPaymentReceived ? 'Issue Token' : 'Payment + Token');
 
             // initialize map
-            paymentStatusMap[detail.rowNo] = paymentStatus;
+            paymentModeMap[detail.rowNo] = paymentModeValue;
 
-                        content += `<div class="card search-result-card mt-3">
-                            <div class="card-body">
-                                <div class="search-result-top">
-                                    <div>
-                                        <div class="search-result-role">${detail.role || 'Participant'}</div>
-                                        <h5 class="search-result-name mb-2">${detail.name}</h5>
-                                        <div class="search-result-pills">
-                                            <span class="result-pill">${detail.regRefNo}</span>
-                                            <span class="result-pill">${detail.center || 'Center NA'}</span>
-                                            <span class="result-pill">${detail.department || 'Department NA'}</span>
-                                            <span class="result-pill food-preference-pill ${foodPreferenceClass}">${foodPreference || 'Food NA'}</span>
-                                        </div>
-                                    </div>
-                                    <div class="search-result-status">
-                                        <span class="status-chip ${paymentStatusClass}" id="paid${detail.rowNo}">${paymentStatusText}</span>
-                                        <span class="status-caption">Payment status</span>
-                                    </div>
-                                </div>
-
-                                <div class="search-result-grid">
-                                    <div class="detail-item">
-                                        <span class="detail-label">Mobile</span>
-                                        <span class="detail-value">${detail.mobileNumber || '-'}</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="detail-label">Bus Required</span>
-                                        <span class="detail-value">${detail.busRequired || '-'}</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="detail-label">Reg Amount</span>
-                                        <span class="detail-value">${regAmount || '-'}</span>
-                                    </div>
-                                    <div class="detail-item detail-item-wide">
-
-                                        <div class="detail-inline-pair">
-                                            <span class="detail-inline-block">
-                                                <span class="detail-inline-key">Payment By</span>
-                                                <span class="detail-value" id="payment_received_by${detail.rowNo}">${paymentReceivedBy || '-'}</span>
-                                            </span>
-                                            <span class="detail-inline-block">
-                                                <span class="detail-inline-key">Token By</span>
-                                                <span class="detail-value" id="token_issued${detail.rowNo}">${tokenIssuedBy || '-'}</span>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="payment-mode-panel">
-                                    <div class="detail-label mb-2">Select Payment Mode</div>
-                                    <div class="payment-choice-group">
-                                        <input type="radio"
-                                                     class="payment-choice-input"
-                                                     id="paymentMode${detail.rowNo}UPI"
-                                                     name="paymentMode${detail.rowNo}"
-                                                     onchange="updatePaymentStatus('${detail.rowNo}', this.value)"
-                                                     value="UPI"
-                                                            ${paymentModeValue !== "" ? "disabled" : ""}
-                                                            ${paymentModeValue === "UPI" ? "checked" : ""}>
-                                        <label class="payment-choice" for="paymentMode${detail.rowNo}UPI">UPI</label>
-
-                                        <input type="radio"
-                                                     class="payment-choice-input"
-                                                     id="paymentMode${detail.rowNo}CASH"
-                                                     name="paymentMode${detail.rowNo}"
-                                                     onchange="updatePaymentStatus('${detail.rowNo}', this.value)"
-                                                     value="CASH"
-                                                            ${paymentModeValue !== "" ? "disabled" : ""}
-                                                            ${paymentModeValue === "CASH" ? "checked" : ""}>
-                                        <label class="payment-choice" for="paymentMode${detail.rowNo}CASH">Cash</label>
-                                    </div>
-                                </div>
-
-                                <div class="search-result-actions">
-                                    <button class="btn btn-primary"
-                                                    onclick="checkIn('${detail.rowNo}', 'paid')">Payment Received</button>
-                                    <button class="btn btn-outline-primary issue-token-btn"
-                                                    onclick="checkIn('${detail.rowNo}', 'token_issued')"
-                                                    ${paymentStatus === "" ? "disabled" : ""}>Issue Token</button>
-                                </div>
+            content += `<div class="card search-result-card mt-3">
+                <div class="card-body">
+                    <div class="search-result-top">
+                        <div>
+                            <div class="search-result-role">${detail.role || 'Participant'}</div>
+                            <h5 class="search-result-name mb-2">${detail.name}</h5>
+                            <div class="search-result-pills">
+                                <span class="result-pill">${detail.regRefNo}</span>
+                                <span class="result-pill">${detail.center || 'Center NA'}</span>
+                                <span class="result-pill">${detail.department || 'Department NA'}</span>
+                                <span class="result-pill food-preference-pill ${foodPreferenceClass}">${foodPreference || 'Food NA'}</span>
                             </div>
-                        </div>`;
+                        </div>
+                        <div class="search-result-status">
+                            <span class="status-chip ${paymentStatusClass}" id="paid${detail.rowNo}">${paymentStatusText}</span>
+                            <span class="status-caption">Payment status</span>
+                        </div>
+                    </div>
+
+                    <div class="search-result-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Mobile</span>
+                            <span class="detail-value">${detail.mobileNumber || '-'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Bus Required</span>
+                            <span class="detail-value">${detail.busRequired || '-'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Reg Amount</span>
+                            <span class="detail-value">${regAmount || '-'}</span>
+                        </div>
+                        <div class="detail-item detail-item-wide">
+
+                            <div class="detail-inline-pair">
+                                <span class="detail-inline-block">
+                                    <span class="detail-inline-key">Payment By</span>
+                                    <span class="detail-value" id="payment_received_by${detail.rowNo}">${paymentReceivedBy || '-'}</span>
+                                </span>
+                                <span class="detail-inline-block">
+                                    <span class="detail-inline-key">Token By</span>
+                                    <span class="detail-value" id="token_issued${detail.rowNo}">${tokenIssuedBy || '-'}</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="payment-mode-panel">
+                        <div class="detail-label mb-2">Select Payment Mode</div>
+                        <div class="payment-choice-group">
+                            <input type="radio"
+                                            class="payment-choice-input"
+                                            id="paymentMode${detail.rowNo}UPI"
+                                            name="paymentMode${detail.rowNo}"
+                                            onchange="updatePaymentMode('${detail.rowNo}', this.value)"
+                                            value="UPI"
+                                                ${paymentModeValue !== "" ? "disabled" : ""}
+                                                ${paymentModeValue === "UPI" ? "checked" : ""}>
+                            <label class="payment-choice" for="paymentMode${detail.rowNo}UPI">UPI</label>
+
+                            <input type="radio"
+                                            class="payment-choice-input"
+                                            id="paymentMode${detail.rowNo}CASH"
+                                            name="paymentMode${detail.rowNo}"
+                                            onchange="updatePaymentMode('${detail.rowNo}', this.value)"
+                                            value="CASH"
+                                                ${paymentModeValue !== "" ? "disabled" : ""}
+                                                ${paymentModeValue === "CASH" ? "checked" : ""}>
+                            <label class="payment-choice" for="paymentMode${detail.rowNo}CASH">Cash</label>
+                        </div>
+                    </div>
+
+                    <div class="search-result-actions">
+                        <button class="btn btn-primary"
+                                        onclick="checkIn('${detail.rowNo}', 'complete_checkin')"
+                                        ${isTokenIssued ? "disabled" : ""}>${actionLabel}</button>
+                    </div>
+                </div>
+            </div>`;
         });
     } else {
         content = '<p class="text-danger mt-3">Record not found</p>';
@@ -585,19 +588,16 @@ function displayStudentDetails(details) {
 }
 
 // global function
-function updatePaymentStatus(regRefNo, value) {
+function updatePaymentMode(regRefNo, value) {
     const normalized = value.toUpperCase() === "UPI" ? "UPI" : "CASH";
-    paymentStatusMap[regRefNo] = normalized;
+    paymentModeMap[regRefNo] = normalized;
 
-    console.log(`Payment status for ${regRefNo} updated to: ${normalized}`);
-
-    // update display span
-    document.getElementById(`paid${regRefNo}`).innerText = normalized;
+    console.log(`Payment mode for ${regRefNo} updated to: ${normalized}`);
 }
 
 // checkIn with validation
 function checkIn(regRefNo, status) {
-    const paymentMode = paymentStatusMap[regRefNo] || "";
+    const paymentMode = paymentModeMap[regRefNo] || "";
     const actionKey = `${regRefNo}:${status}`;
     if (inFlight.checkIn.has(actionKey)) {
         return;
@@ -605,7 +605,10 @@ function checkIn(regRefNo, status) {
 
     const clickedButton = (window.event && window.event.currentTarget) ? window.event.currentTarget : null;
     const card = clickedButton ? clickedButton.closest('.card-body') : null;
-    const issueTokenBtn = card ? card.querySelector('.issue-token-btn') : null;
+    const paymentStatusTarget = document.getElementById(`paid${regRefNo}`);
+    const paymentReceivedByTarget = document.getElementById(`payment_received_by${regRefNo}`);
+    const tokenIssuedByTarget = document.getElementById(`token_issued${regRefNo}`);
+    let keepActionDisabled = false;
 
 
     if (!paymentMode) {
@@ -622,6 +625,7 @@ function checkIn(regRefNo, status) {
     let statusTextMap = {
         'paid': 'Payment Received',
         'token_issued': 'Token Issued',
+        'complete_checkin': 'Check-In',
     };
     const authToken = (ui.accessTokenField && ui.accessTokenField.value) || '';
 
@@ -631,16 +635,40 @@ function checkIn(regRefNo, status) {
     })
         .then(result => {
             const statusValue = (result.status || '').toLowerCase();
-            const statusTargetId = status === 'paid' ? `paid${regRefNo}` : `token_issued${regRefNo}`;
 
             if (statusValue === 'success') {
-                const statusTarget = document.getElementById(statusTargetId);
-                if (statusTarget) {
-                    statusTarget.innerText = 'YES';
+                const responseData = result.data || {};
+                if (paymentStatusTarget) {
+                    paymentStatusTarget.innerText = responseData.paymentStatus || 'PAID';
+                    paymentStatusTarget.classList.remove('status-pending');
+                    paymentStatusTarget.classList.add('status-paid');
                 }
+                if (paymentReceivedByTarget) {
+                    paymentReceivedByTarget.innerText = responseData.paymentReceivedBy || paymentReceivedByTarget.innerText || '-';
+                }
+                if (tokenIssuedByTarget) {
+                    tokenIssuedByTarget.innerText = responseData.tokenIssuedBy || tokenIssuedByTarget.innerText || '-';
+                }
+                if (responseData.paymentMode) {
+                    paymentModeMap[regRefNo] = String(responseData.paymentMode).toUpperCase();
+                }
+                if (clickedButton) {
+                    clickedButton.innerText = 'Check-In Completed';
+                }
+                keepActionDisabled = true;
                 showModalMessage(`${statusTextMap[status]} successful!`, true);
-                if (status === 'paid' && issueTokenBtn) {
-                    issueTokenBtn.disabled = false;
+                requestCache.search.clear();
+                requestCache.report = { data: null, updatedAt: 0 };
+                requestCache.summary = { data: null, updatedAt: 0 };
+                if (card) {
+                    const selectedModeInput = card.querySelector(`input[name="paymentMode${regRefNo}"]:checked`);
+                    if (selectedModeInput) {
+                        selectedModeInput.disabled = true;
+                    }
+                    const unselectedModeInputs = card.querySelectorAll(`input[name="paymentMode${regRefNo}"]:not(:checked)`);
+                    unselectedModeInputs.forEach((input) => {
+                        input.disabled = true;
+                    });
                 }
             } else {
                 showModalMessage(`${statusTextMap[status]} failed. Please try again.`, false);
@@ -651,7 +679,7 @@ function checkIn(regRefNo, status) {
         })
         .finally(() => {
             inFlight.checkIn.delete(actionKey);
-            if (clickedButton) {
+            if (clickedButton && !keepActionDisabled) {
                 clickedButton.disabled = false;
             }
             hideBackdrop();
