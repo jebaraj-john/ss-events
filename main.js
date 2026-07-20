@@ -34,6 +34,7 @@ function initUiRefs() {
     ui.summaryUpdatedAt = document.getElementById('summaryUpdatedAt');
     ui.reportStatus = document.getElementById('reportStatus');
     ui.summaryStatus = document.getElementById('summaryStatus');
+    ui.summaryPaymentsTable = document.getElementById('summaryPaymentsTable');
 }
 
 function getCheckInModal() {
@@ -217,6 +218,59 @@ function renderSummaryCards(data) {
     document.getElementById('totalAmount').innerText = `\u20B9${data.totalAmount || 0}`;
 }
 
+function renderSummaryPaymentsTable(summaryData) {
+    if (!ui.summaryPaymentsTable) {
+        return;
+    }
+
+    const payments = Array.isArray(summaryData && summaryData.payments) ? summaryData.payments : [];
+    if ($.fn.DataTable.isDataTable('#summaryPaymentTable')) {
+        $('#summaryPaymentTable').DataTable().destroy();
+    }
+
+    if (payments.length === 0) {
+        ui.summaryPaymentsTable.innerHTML = '<p class="text-muted mb-0">No payment records found for the logged-in user.</p>';
+        return;
+    }
+
+    let table = `<div class="report-table-shell"><div class="table-responsive report-table-scroll"><table id="summaryPaymentTable" class="table table-bordered table-striped report-student-table">
+        <thead class="table-light">
+            <tr>
+                <th>Reg No</th>
+                <th>Name</th>
+                <th>Center</th>
+                <th>Payment Mode</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>`;
+
+    payments.forEach((payment) => {
+        table += `<tr>
+            <td>${payment.regRefNo || ''}</td>
+            <td>${payment.name || ''}</td>
+            <td>${payment.center || ''}</td>
+            <td>${payment.paymentMode || ''}</td>
+            <td>${payment.amount || 0}</td>
+        </tr>`;
+    });
+
+    table += '</tbody></table></div></div>';
+    ui.summaryPaymentsTable.innerHTML = table;
+
+    $('#summaryPaymentTable').DataTable({
+        deferRender: true,
+        pageLength: 25,
+        order: [[0, 'asc']],
+        search: {
+            return: true
+        },
+        language: {
+            search: 'Search summary table:'
+        }
+    });
+}
+
 // Fetch and display payment summary
 async function checkedInSummary(forceRefresh = false) {
     const authToken = (ui.accessTokenField && ui.accessTokenField.value) || '';
@@ -227,6 +281,7 @@ async function checkedInSummary(forceRefresh = false) {
     const cached = requestCache.summary;
     if (!forceRefresh && cached.data) {
         renderSummaryCards(cached.data);
+        renderSummaryPaymentsTable(cached.data);
         setUpdatedAt('summary', cached.updatedAt);
         if (isCacheFresh(cached.updatedAt)) {
             setStatusMessage('summary', 'Showing recent data', 'small text-muted');
@@ -248,6 +303,7 @@ async function checkedInSummary(forceRefresh = false) {
             const updatedAt = Date.now();
             requestCache.summary = { data: result.data || {}, updatedAt };
             renderSummaryCards(result.data || {});
+            renderSummaryPaymentsTable(result.data || {});
             setUpdatedAt('summary', updatedAt);
             setStatusMessage('summary', 'Data updated', 'small text-success');
         } else {
@@ -258,9 +314,11 @@ async function checkedInSummary(forceRefresh = false) {
         console.log(error);
         if (cached.data) {
             renderSummaryCards(cached.data);
+            renderSummaryPaymentsTable(cached.data);
             setStatusMessage('summary', 'Could not refresh. Showing last available data.', 'small text-warning');
         } else {
             setStatusMessage('summary', '', '');
+            renderSummaryPaymentsTable({ payments: [] });
             showModalMessage('Error retrieving summary data', false);
         }
     } finally {

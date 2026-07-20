@@ -499,8 +499,9 @@ function checkedInSummary(userEmail ,sheet_name) {
   }
 
   const data = getSheetReadRows(sheet_name, 18);
-  totalUPI = 0;
-  totalCash = 0
+  let totalUPI = 0;
+  let totalCash = 0;
+  const payments = [];
 
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
@@ -509,11 +510,22 @@ function checkedInSummary(userEmail ,sheet_name) {
     const paymentReceivedBy = String(row[COL.PAYMENT_RECEIVED_BY] || "");
     const paymentStatus = String(row[COL.PAYMENT_STATUS] || "").toUpperCase();
     const amount = parseInt(row[COL.REG_AMOUNT], 10) || 0;
+    const isMatchedPayment = paymentReceivedBy === userEmail && paymentStatus === "PAID";
 
-    if (paymentReceivedBy === userEmail && paymentStatus === "PAID" && paymentMode === "UPI")  {
+    if (isMatchedPayment) {
+      payments.push({
+        regRefNo: row[COL.REG_NO],
+        name: row[COL.NAME],
+        center: row[COL.CENTER],
+        paymentMode: paymentMode,
+        amount: amount,
+      });
+    }
+
+    if (isMatchedPayment && paymentMode === "UPI")  {
       totalUPI += amount
     }
-    if (paymentReceivedBy === userEmail && paymentStatus === "PAID" && paymentMode === "CASH")  {
+    if (isMatchedPayment && paymentMode === "CASH")  {
       totalCash += amount
     }
   }
@@ -523,6 +535,7 @@ function checkedInSummary(userEmail ,sheet_name) {
     "totalUPI": totalUPI,
     "totalCash": totalCash,
     "totalAmount": totalUPI + totalCash,
+    "payments": payments,
   };
 
   putCachedJson(cacheKey, summary, READ_CACHE_TTL_SECONDS);
