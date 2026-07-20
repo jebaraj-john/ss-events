@@ -529,14 +529,14 @@ function displayStudentDetails(details) {
                                         <span class="detail-value">${regAmount || '-'}</span>
                                     </div>
                                     <div class="detail-item detail-item-wide">
-                                        <span class="detail-label">Payment / Token By</span>
+
                                         <div class="detail-inline-pair">
                                             <span class="detail-inline-block">
-                                                <span class="detail-inline-key">Payment</span>
+                                                <span class="detail-inline-key">Payment By</span>
                                                 <span class="detail-value" id="payment_received_by${detail.rowNo}">${paymentReceivedBy || '-'}</span>
                                             </span>
                                             <span class="detail-inline-block">
-                                                <span class="detail-inline-key">Token</span>
+                                                <span class="detail-inline-key">Token By</span>
                                                 <span class="detail-value" id="token_issued${detail.rowNo}">${tokenIssuedBy || '-'}</span>
                                             </span>
                                         </div>
