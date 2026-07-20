@@ -415,72 +415,99 @@ function displayStudentDetails(details) {
         details.forEach(detail => {
             // use detail.paymentStatus if available, else ""
             const paymentStatus = detail.paymentStatus || "";
+                        const paymentStatusText = paymentStatus || 'Not Paid';
+                        const paymentStatusClass = paymentStatus.toLowerCase() === 'paid' ? 'status-paid' : 'status-pending';
             const paymentModeValue = (detail.paymentMode || '').toUpperCase();
             const foodPreference = detail.foodPreference || '';
             const paymentReceivedBy = detail.paymentReceivedBy || '';
             const tokenIssuedBy = detail.tokenIssuedBy || '';
             const regAmount = detail.reg_amount || '';
+            const foodPreferenceClass = foodPreference.toString().toLowerCase();
 
             // initialize map
             paymentStatusMap[detail.rowNo] = paymentStatus;
 
-            content += `<div class="card mt-3">
-              <div class="card-body">
-                <h5>Name: ${detail.name}</h5>
-                <p><strong>Reg No:</strong> ${detail.regRefNo}</p>
-                <p><strong>Role:</strong> ${detail.role}</p>
-                <p><strong>Payment Mode:</strong> ${detail.paymentMode}</p>
-                <p><strong>Center:</strong> ${detail.center}</p>
-                <p><strong>Department:</strong> ${detail.department}</p>
-                <p><strong>MobileNumber:</strong> ${detail.mobileNumber}</p>
-                <p><strong>Bus Required:</strong> ${detail.busRequired}</p>
-                <p><strong>Reg Amount:</strong> ${regAmount}</p>
-                <p class="${foodPreference.toString().toLowerCase()}">
-                    <strong>Food Preference:</strong> ${foodPreference}
-                </p>
+                        content += `<div class="card search-result-card mt-3">
+                            <div class="card-body">
+                                <div class="search-result-top">
+                                    <div>
+                                        <div class="search-result-role">${detail.role || 'Participant'}</div>
+                                        <h5 class="search-result-name mb-2">${detail.name}</h5>
+                                        <div class="search-result-pills">
+                                            <span class="result-pill">${detail.regRefNo}</span>
+                                            <span class="result-pill">${detail.center || 'Center NA'}</span>
+                                            <span class="result-pill">${detail.department || 'Department NA'}</span>
+                                            <span class="result-pill food-preference-pill ${foodPreferenceClass}">${foodPreference || 'Food NA'}</span>
+                                        </div>
+                                    </div>
+                                    <div class="search-result-status">
+                                        <span class="status-chip ${paymentStatusClass}" id="paid${detail.rowNo}">${paymentStatusText}</span>
+                                        <span class="status-caption">Payment status</span>
+                                    </div>
+                                </div>
 
-                <p>
-                    Payment Mode:
-                    <input type="radio"
-                           name="paymentMode${detail.rowNo}"
-                           onchange="updatePaymentStatus('${detail.rowNo}', this.value)"
-                           value="UPI"
-                              ${paymentModeValue !== "" ? "disabled" : ""}
-                              ${paymentModeValue === "UPI" ? "checked" : ""}>
-                    <label for="paymentMode${detail.rowNo}UPI">UPI</label>
+                                <div class="search-result-grid">
+                                    <div class="detail-item">
+                                        <span class="detail-label">Mobile</span>
+                                        <span class="detail-value">${detail.mobileNumber || '-'}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Bus Required</span>
+                                        <span class="detail-value">${detail.busRequired || '-'}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Reg Amount</span>
+                                        <span class="detail-value">${regAmount || '-'}</span>
+                                    </div>
+                                    <div class="detail-item detail-item-wide">
+                                        <span class="detail-label">Payment / Token By</span>
+                                        <div class="detail-inline-pair">
+                                            <span class="detail-inline-block">
+                                                <span class="detail-inline-key">Payment</span>
+                                                <span class="detail-value" id="payment_received_by${detail.rowNo}">${paymentReceivedBy || '-'}</span>
+                                            </span>
+                                            <span class="detail-inline-block">
+                                                <span class="detail-inline-key">Token</span>
+                                                <span class="detail-value" id="token_issued${detail.rowNo}">${tokenIssuedBy || '-'}</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
 
-                    <input type="radio"
-                           name="paymentMode${detail.rowNo}"
-                           onchange="updatePaymentStatus('${detail.rowNo}', this.value)"
-                           value="CASH"
-                              ${paymentModeValue !== "" ? "disabled" : ""}
-                              ${paymentModeValue === "CASH" ? "checked" : ""}>
-                    <label for="paymentMode${detail.rowNo}CASH">CASH</label>
-                </p>
+                                <div class="payment-mode-panel">
+                                    <div class="detail-label mb-2">Select Payment Mode</div>
+                                    <div class="payment-choice-group">
+                                        <input type="radio"
+                                                     class="payment-choice-input"
+                                                     id="paymentMode${detail.rowNo}UPI"
+                                                     name="paymentMode${detail.rowNo}"
+                                                     onchange="updatePaymentStatus('${detail.rowNo}', this.value)"
+                                                     value="UPI"
+                                                            ${paymentModeValue !== "" ? "disabled" : ""}
+                                                            ${paymentModeValue === "UPI" ? "checked" : ""}>
+                                        <label class="payment-choice" for="paymentMode${detail.rowNo}UPI">UPI</label>
 
-                <p>
-                    Payment Received:
-                    <span class="${paymentStatus.toLowerCase()}" id="paid${detail.rowNo}">
-                        ${paymentStatus || "Not Paid"}
-                    </span>
-                </p>
-                <p>
-                    Payment Received By:
-                    <span id="payment_received_by${detail.rowNo}">${paymentReceivedBy}</span>
-                </p>
-                <p>
-                    Token Issued By:
-                    <span id="token_issued${detail.rowNo}">${tokenIssuedBy}</span>
-                </p>
+                                        <input type="radio"
+                                                     class="payment-choice-input"
+                                                     id="paymentMode${detail.rowNo}CASH"
+                                                     name="paymentMode${detail.rowNo}"
+                                                     onchange="updatePaymentStatus('${detail.rowNo}', this.value)"
+                                                     value="CASH"
+                                                            ${paymentModeValue !== "" ? "disabled" : ""}
+                                                            ${paymentModeValue === "CASH" ? "checked" : ""}>
+                                        <label class="payment-choice" for="paymentMode${detail.rowNo}CASH">Cash</label>
+                                    </div>
+                                </div>
 
-                <button class="btn btn-primary"
-                        onclick="checkIn('${detail.rowNo}', 'paid')"> Payment Received
-                </button>
-                <button class="btn btn-primary issue-token-btn"
-                        onclick="checkIn('${detail.rowNo}', 'token_issued')"
-                        ${paymentStatus === "" ? "disabled" : ""}>Issue Token</button>
-              </div>
-            </div>`;
+                                <div class="search-result-actions">
+                                    <button class="btn btn-primary"
+                                                    onclick="checkIn('${detail.rowNo}', 'paid')">Payment Received</button>
+                                    <button class="btn btn-outline-primary issue-token-btn"
+                                                    onclick="checkIn('${detail.rowNo}', 'token_issued')"
+                                                    ${paymentStatus === "" ? "disabled" : ""}>Issue Token</button>
+                                </div>
+                            </div>
+                        </div>`;
         });
     } else {
         content = '<p class="text-danger mt-3">Record not found</p>';

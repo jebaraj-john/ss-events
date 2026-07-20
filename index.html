@@ -73,6 +73,264 @@
       color: #721c24;
     }
 
+    .search-result-card {
+      border: 1px solid #e6ebf2;
+      border-radius: 18px;
+      box-shadow: 0 10px 26px rgba(14, 30, 62, 0.08);
+      overflow: hidden;
+    }
+
+    .search-result-card .card-body {
+      padding: 1rem;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
+    }
+
+    .search-result-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .search-result-role {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6b7280;
+      margin-bottom: 0.35rem;
+    }
+
+    .search-result-name {
+      color: #14213d;
+    }
+
+    .search-result-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .result-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      background: #eef4ff;
+      color: #24447b;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .food-preference-pill.veg {
+      background: #e3f7e8;
+      color: #1f6b37;
+      animation: none;
+    }
+
+    .food-preference-pill.non-veg {
+      background: #fde8e6;
+      color: #a33a2d;
+    }
+
+    .search-result-status {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      min-width: 120px;
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 110px;
+      padding: 0.45rem 0.8rem;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .status-paid {
+      background: #dff3e4;
+      color: #18603a;
+    }
+
+    .status-pending {
+      background: #fff0d8;
+      color: #8a4b08;
+    }
+
+    .status-caption {
+      margin-top: 0.35rem;
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+
+    .search-result-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.7rem;
+      margin-bottom: 1rem;
+    }
+
+    .detail-item {
+      padding: 0.8rem 0.9rem;
+      border-radius: 14px;
+      background: #f7f9fc;
+      border: 1px solid #edf1f7;
+    }
+
+    .detail-item-wide {
+      grid-column: 1 / -1;
+    }
+
+    .detail-label {
+      display: block;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.25rem;
+    }
+
+    .detail-value {
+      display: block;
+      color: #1f2937;
+      font-weight: 600;
+      word-break: break-word;
+    }
+
+    .detail-inline-pair {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .detail-inline-block {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      min-width: 0;
+      flex: 1 1 220px;
+    }
+
+    .detail-inline-key {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .payment-mode-panel {
+      padding: 0.95rem 1rem;
+      border-radius: 16px;
+      background: #f4f8ff;
+      border: 1px solid #dde8fb;
+      margin-bottom: 1rem;
+    }
+
+    .payment-choice-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .payment-choice-input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .payment-choice {
+      min-width: 120px;
+      padding: 0.65rem 0.9rem;
+      border-radius: 12px;
+      border: 1px solid #bfd2f4;
+      background: #ffffff;
+      color: #24447b;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .payment-choice-input:checked + .payment-choice {
+      background: #1f6feb;
+      border-color: #1f6feb;
+      color: #ffffff;
+      box-shadow: 0 8px 18px rgba(31, 111, 235, 0.22);
+    }
+
+    .payment-choice-input:disabled + .payment-choice {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .payment-choice-input:checked:disabled + .payment-choice {
+      opacity: 1;
+      background: #1f6feb;
+      border-color: #1f6feb;
+      color: #ffffff;
+      box-shadow: 0 8px 18px rgba(31, 111, 235, 0.18);
+    }
+
+    .search-result-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .search-result-actions .btn {
+      min-width: 150px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    @media (min-width: 768px) {
+      .search-result-card .card-body {
+        padding: 1.25rem;
+      }
+
+      .search-result-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.8rem;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .search-result-top {
+        flex-direction: column;
+      }
+
+      .search-result-status {
+        align-items: flex-start;
+      }
+
+      .search-result-actions .btn,
+      .payment-choice {
+        width: 100%;
+      }
+
+      .detail-inline-pair {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+
+      .detail-inline-block {
+        width: 100%;
+      }
+    }
+
 
     .toggle-btn:hover {
       color: #495057;
