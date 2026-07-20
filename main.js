@@ -597,6 +597,7 @@ function displayStudentDetails(details) {
         content = '<p class="text-danger mt-3">Record not found</p>';
     }
     document.getElementById('details').innerHTML = content;
+    document.querySelector('.search-result-actions .btn')?.scrollIntoView({ behavior: 'smooth' });
 }
 
 // global function
